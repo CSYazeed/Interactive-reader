@@ -3,8 +3,8 @@
 ========================================================= */
 
 :root {
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
+    --primary: #067db9;
+    --primary-dark: #1264a7;
     --primary-light: #eff6ff;
 
     --background: #eef3f8;
@@ -773,31 +773,6 @@ select {
         box-shadow 0.15s ease;
 }
 
-
-/*
-   عند مرور الماوس.
-*/
-
-.textLayer .clickable-word:hover {
-    background:
-        rgba(37, 99, 235, 0.15);
-}
-
-
-/*
-   النص المحدد.
-*/
-
-.textLayer .selected-word {
-    background:
-        rgba(37, 99, 235, 0.28);
-
-    box-shadow:
-        0 0 0 1px
-        rgba(37, 99, 235, 0.20);
-}
-
-
 /*
    تأكد أن الـ canvas تحت TextLayer.
 */
@@ -820,17 +795,6 @@ select {
     transition:
         background 0.15s ease,
         box-shadow 0.15s ease;
-}
-
-.text-layer .clickable-word:hover {
-    background: rgba(37, 99, 235, 0.15);
-}
-
-.text-layer .selected-word {
-    background: rgba(37, 99, 235, 0.28);
-
-    box-shadow:
-        0 0 0 1px rgba(37, 99, 235, 0.2);
 }
 
 /* =========================================================
@@ -1011,4 +975,29 @@ select {
 .page-input {
     appearance: textfield;
     -moz-appearance: textfield;
+}
+
+/* =========================================================
+   ACCURATE TEXT HIGHLIGHT
+========================================================= */
+
+.pdf-text-highlight {
+    position: absolute;
+
+    pointer-events: none;
+
+    z-index: 3;
+
+    background: rgba(37, 99, 235, 0.25);
+
+    border-radius: 3px;
+
+    box-shadow:
+        0 0 0 1px rgba(37, 99, 235, 0.12);
+
+    transition:
+        left 0.08s ease,
+        top 0.08s ease,
+        width 0.08s ease,
+        height 0.08s ease;
 }
