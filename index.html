@@ -1,28 +1,148 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Interactive PDF Reader</title>
+    <title>Yazeed English - Interactive Reader</title>
 
-    <!-- PDF.js -->
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs"
-        type="module">
-    </script>
+    <!-- خط Tajawal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf_viewer.min.css"
+>
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <div class="app">
+    <!-- =====================================================
+         شاشة الدخول
+    ====================================================== -->
 
-        <!-- =================================
-             TOP BAR
-        ================================== -->
+    <section id="loginScreen" class="auth-screen">
+
+        <div class="auth-card">
+
+            <div class="auth-icon">🔐</div>
+
+            <h1>الدخول إلى المحتوى</h1>
+
+            <p class="auth-description">
+                أدخل الرمز السري المكوّن من 6 أرقام للوصول إلى ملفك.
+            </p>
+
+            <form id="loginForm">
+
+                <label for="accessCode">
+                    الرمز السري
+                </label>
+
+                <input
+                    type="text"
+                    id="accessCode"
+                    class="code-input"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    maxlength="6"
+                    pattern="[0-9]{6}"
+                    placeholder="••••••"
+                    aria-label="الرمز السري المكون من 6 أرقام"
+                    required
+                >
+
+                <p id="loginError" class="form-error" hidden>
+                    الرمز غير صحيح. تأكد من إدخال الرمز المكوّن من 6 أرقام.
+                </p>
+
+                <button type="submit" class="primary-button">
+                    دخول
+                </button>
+
+            </form>
+
+            <p class="auth-note">
+                هذا المحتوى مخصص للاستخدام الشخصي فقط.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         شاشة سياسة الاستخدام
+    ====================================================== -->
+
+    <section id="policyScreen" class="auth-screen" hidden>
+
+        <div class="policy-card">
+
+            <div class="policy-icon">📋</div>
+
+            <h1>إقرار سياسة استخدام المحتوى</h1>
+
+            <p class="policy-intro">
+                قبل الدخول إلى المحتوى، يرجى قراءة الإقرار التالي والموافقة عليه.
+            </p>
+
+            <div class="policy-box">
+
+                <h2>أتعهد بما يلي:</h2>
+
+                <ul>
+                    <li>أن المحتوى الذي سأصل إليه مخصص للاستخدام الشخصي فقط.</li>
+                    <li>ألا أقوم بنشر أو مشاركة أو إعادة توزيع محتوى الملفات بأي شكل من الأشكال.</li>
+                    <li>ألا أقوم بإرسال الملفات أو نسخها أو رفعها إلى مواقع أو منصات أخرى.</li>
+                    <li>ألا أستخدم المحتوى بطريقة تخالف حقوق مالكه أو الغرض المخصص له.</li>
+                    <li>أتحمل مسؤولية الالتزام بهذه السياسة أثناء استخدام المحتوى.</li>
+                </ul>
+
+            </div>
+
+            <label class="agreement-label">
+
+                <input
+                    type="checkbox"
+                    id="policyAgreement"
+                >
+
+                <span>
+                    أقر بأنني قرأت ما سبق وأوافق على الالتزام بسياسة استخدام المحتوى.
+                </span>
+
+            </label>
+
+            <p id="policyError" class="form-error" hidden>
+                يجب الموافقة على الإقرار قبل المتابعة.
+            </p>
+
+            <button
+                id="continueButton"
+                class="primary-button"
+                type="button"
+            >
+                أوافق وأتابع
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         التطبيق الرئيسي
+    ====================================================== -->
+
+    <div id="readerApp" class="app" hidden>
+
+        <!-- الشريط العلوي -->
 
         <header class="topbar">
 
@@ -33,68 +153,47 @@
                 </div>
 
                 <div>
-                    <h1>Interactive Reader</h1>
+                    <h1>Yazeed English</h1>
 
                     <p>
-                        Click an English word to hear it
+                       الفارئ التفاعلي
                     </p>
                 </div>
 
             </div>
 
-
-            <label class="upload-button">
-
-                <span>📂</span>
-
-                Open PDF
-
-                <input
-                    type="file"
-                    id="pdfInput"
-                    accept="application/pdf"
-                    hidden
-                >
-
-            </label>
+            <div class="access-badge">
+                🔒 وصول خاص
+            </div>
 
         </header>
 
 
-        <!-- =================================
-             VOICE CONTROL PANEL
-        ================================== -->
+        <!-- لوحة التحكم بالصوت -->
 
         <section class="voice-panel">
 
             <div class="voice-panel-inner">
 
-
-                <!-- Voice selector -->
-
                 <div class="voice-control">
 
                     <label for="voiceSelect">
-                        🎙️ Voice
+                        🎙️ الصوت
                     </label>
 
                     <select id="voiceSelect">
-
                         <option>
-                            Loading voices...
+                            جارٍ تحميل الأصوات...
                         </option>
-
                     </select>
 
                 </div>
 
 
-                <!-- Speed -->
-
                 <div class="speed-control">
 
                     <label for="speedRange">
-                        Speed
+                        سرعة القراءة
                     </label>
 
                     <div class="speed-row">
@@ -116,10 +215,7 @@
                             🐇
                         </span>
 
-                        <span
-                            id="speedValue"
-                            class="speed-value"
-                        >
+                        <span id="speedValue" class="speed-value">
                             0.85×
                         </span>
 
@@ -128,13 +224,12 @@
                 </div>
 
 
-                <!-- Test voice -->
-
                 <button
                     id="testVoiceButton"
                     class="test-voice-button"
+                    type="button"
                 >
-                    🔊 Test Voice
+                    🔊 اختبار الصوت
                 </button>
 
             </div>
@@ -142,9 +237,7 @@
         </section>
 
 
-        <!-- =================================
-             TOOLBAR
-        ================================== -->
+        <!-- شريط الأدوات -->
 
         <div class="toolbar">
 
@@ -153,33 +246,40 @@
                 <button
                     id="previousPage"
                     class="tool-button"
-                    title="Previous page"
+                    title="الصفحة السابقة"
+                    aria-label="الصفحة السابقة"
                 >
-                    ←
+                    →
                 </button>
 
                 <div class="page-info">
 
-                    <span id="currentPage">
-                        1
-                    </span>
+    <input
+        type="number"
+        id="pageInput"
+        class="page-input"
+        min="1"
+        value="1"
+        aria-label="رقم الصفحة"
+    >
 
-                    <span class="page-separator">
-                        /
-                    </span>
+    <span class="page-separator">
+        /
+    </span>
 
-                    <span id="totalPages">
-                        0
-                    </span>
+    <span id="totalPages">
+        0
+    </span>
 
-                </div>
+</div>
 
                 <button
                     id="nextPage"
                     class="tool-button"
-                    title="Next page"
+                    title="الصفحة التالية"
+                    aria-label="الصفحة التالية"
                 >
-                    →
+                    ←
                 </button>
 
             </div>
@@ -190,22 +290,21 @@
                 <button
                     id="zoomOut"
                     class="tool-button"
-                    title="Zoom out"
+                    title="تصغير"
+                    aria-label="تصغير"
                 >
                     −
                 </button>
 
-                <span
-                    id="zoomLevel"
-                    class="zoom-level"
-                >
+                <span id="zoomLevel" class="zoom-level">
                     100%
                 </span>
 
                 <button
                     id="zoomIn"
                     class="tool-button"
-                    title="Zoom in"
+                    title="تكبير"
+                    aria-label="تكبير"
                 >
                     +
                 </button>
@@ -215,80 +314,31 @@
         </div>
 
 
-        <!-- =================================
-             PDF VIEWER
-        ================================== -->
+        <!-- عارض PDF -->
 
         <main class="viewer-container">
 
-            <div
-                id="welcomeScreen"
-                class="welcome-screen"
-            >
-
-                <div class="welcome-icon">
-                    📄
-                </div>
-
-                <h2>
-                    Open a PDF to begin
-                </h2>
-
-                <p>
-                    Upload an English PDF and click any
-                    English text to hear its pronunciation.
-                </p>
-
-                <label class="large-upload-button">
-
-                    Choose PDF
-
-                    <input
-                        type="file"
-                        id="pdfInputLarge"
-                        accept="application/pdf"
-                        hidden
-                    >
-
-                </label>
-
-            </div>
-
-
-            <div
-                id="pdfViewer"
-                class="pdf-viewer"
-            ></div>
+            <div id="pdfViewer" class="pdf-viewer"></div>
 
         </main>
 
 
-        <!-- =================================
-             STATUS BAR
-        ================================== -->
+        <!-- شريط الحالة -->
 
         <footer class="statusbar">
 
-            <div
-                id="statusMessage"
-                class="status-message"
-            >
-                No PDF loaded
+            <div id="statusMessage" class="status-message">
+                جارٍ تحميل الملف...
             </div>
 
-            <div
-                id="pronunciationStatus"
-                class="pronunciation-status"
-            >
-                🔊 Click English text to hear it
+            <div id="pronunciationStatus" class="pronunciation-status">
+                🔊 اضغط على النص الإنجليزي لسماع النطق
             </div>
 
         </footer>
 
     </div>
 
-
-    <!-- JavaScript -->
 
     <script
         type="module"

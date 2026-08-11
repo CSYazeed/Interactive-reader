@@ -1,59 +1,124 @@
 /*
-==================================================
- INTERACTIVE PDF READER
-==================================================
+=========================================================
+ YAZEED ENGLISH — القارئ التفاعلي
+ PDF.js 4.10.38
+=========================================================
 
- Features:
+ النظام:
 
- ✓ PDF upload
- ✓ PDF.js rendering
- ✓ Text layer
- ✓ English text detection
- ✓ Click text to pronounce
- ✓ Voice selection
- ✓ Voice testing
- ✓ Speech speed control
- ✓ Saved voice preference
- ✓ Saved speed preference
- ✓ Page navigation
- ✓ Zoom
+ 1. تسجيل الدخول برمز من 6 أرقام
+ 2. كل رمز يفتح ملف PDF محدد
+ 3. الموافقة على سياسة الاستخدام
+ 4. تحميل PDF من مجلد pdfs
+ 5. PDF.js Canvas
+ 6. PDF.js Native TextLayer
+ 7. الضغط على النص الإنجليزي للنطق
+ 8. اختيار الصوت
+ 9. التحكم بسرعة النطق
+ 10. التكبير والتصغير
+ 11. التنقل بين الصفحات
+
+=========================================================
 */
 
 
-/* ==============================================
-   IMPORT PDF.JS
-============================================== */
+/* ======================================================
+   PDF.JS
+====================================================== */
 
 import * as pdfjsLib from
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
 
 
-/* ==============================================
-   PDF.JS WORKER
-============================================== */
+/*
+   PDF.js Worker
+*/
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
 
 
-/* ==============================================
-   HTML ELEMENTS
-============================================== */
+/* ======================================================
+   رموز الدخول وملفات PDF
+======================================================
 
-const pdfInput =
-    document.getElementById("pdfInput");
+   عدّل هذه القائمة فقط.
 
-const pdfInputLarge =
-    document.getElementById("pdfInputLarge");
+   مثال:
+
+   "123456": "pdfs/grammar.pdf"
+
+====================================================== */
+
+const ACCESS_CODES = {
+
+    "111111": "pdfs/grammar1.pdf",
+
+    "222222": "pdfs/grammar2.pdf",
+
+    "581293": "pdfs/grammar3.pdf",
+
+    "726904": "pdfs/grammar4.pdf",
+
+    "915438": "pdfs/grammar5.pdf"
+
+};
+
+
+/* ======================================================
+   عناصر تسجيل الدخول
+====================================================== */
+
+const loginScreen =
+    document.getElementById("loginScreen");
+
+const loginForm =
+    document.getElementById("loginForm");
+
+const accessCodeInput =
+    document.getElementById("accessCode");
+
+const loginError =
+    document.getElementById("loginError");
+
+
+/* ======================================================
+   عناصر سياسة الاستخدام
+====================================================== */
+
+const policyScreen =
+    document.getElementById("policyScreen");
+
+const policyAgreement =
+    document.getElementById("policyAgreement");
+
+const continueButton =
+    document.getElementById("continueButton");
+
+const policyError =
+    document.getElementById("policyError");
+
+
+/* ======================================================
+   التطبيق
+====================================================== */
+
+const readerApp =
+    document.getElementById("readerApp");
+
+
+/* ======================================================
+   عناصر PDF
+====================================================== */
 
 const pdfViewer =
     document.getElementById("pdfViewer");
 
-const welcomeScreen =
-    document.getElementById("welcomeScreen");
-
 const currentPageElement =
     document.getElementById("currentPage");
+
+    const pageInput =
+    document.getElementById("pageInput");
 
 const totalPagesElement =
     document.getElementById("totalPages");
@@ -77,723 +142,415 @@ const statusMessage =
     document.getElementById("statusMessage");
 
 const pronunciationStatus =
-    document.getElementById(
-        "pronunciationStatus"
-    );
+    document.getElementById("pronunciationStatus");
 
 
-/* ==============================================
-   VOICE ELEMENTS
-============================================== */
+/* ======================================================
+   عناصر الصوت
+====================================================== */
 
 const voiceSelect =
-    document.getElementById(
-        "voiceSelect"
-    );
+    document.getElementById("voiceSelect");
 
 const testVoiceButton =
-    document.getElementById(
-        "testVoiceButton"
-    );
+    document.getElementById("testVoiceButton");
 
 const speedRange =
-    document.getElementById(
-        "speedRange"
-    );
+    document.getElementById("speedRange");
 
 const speedValue =
-    document.getElementById(
-        "speedValue"
-    );
+    document.getElementById("speedValue");
 
 
-/* ==============================================
-   VARIABLES
-============================================== */
+/* ======================================================
+   حالة التطبيق
+====================================================== */
 
 let pdfDocument = null;
 
 let currentPage = 1;
 
-let scale = 1.0;
-
-let selectedWordElement = null;
-
-
-/*
-   All available browser voices.
-*/
+let scale = 1;
 
 let voices = [];
 
-
-/*
-   Currently selected voice.
-*/
-
 let selectedVoice = null;
-
-
-/*
-   Default speaking speed.
-
-   0.85 is intentionally slightly slower
-   because this is an English learning website.
-*/
 
 let speechRate = 0.85;
 
+let authorizedPdfPath = null;
 
-/* ==============================================
-   LOAD SAVED SETTINGS
-============================================== */
-
-function loadSpeechSettings() {
-
-    const savedRate =
-        localStorage.getItem(
-            "pdfReaderSpeechRate"
-        );
+let selectedTextElement = null;
 
 
-    if (savedRate) {
+/*
+   رقم عملية الرسم الحالية.
 
-        speechRate =
-            parseFloat(savedRate);
+   يمنع الصفحة القديمة من الظهور
+   إذا ضغط المستخدم بسرعة على التنقل.
+*/
 
-        speedRange.value =
-            speechRate;
+let renderId = 0;
 
-        updateSpeedDisplay();
-    }
+
+/* ======================================================
+   إظهار شاشة الدخول
+====================================================== */
+
+function showLoginScreen() {
+
+    loginScreen.hidden = false;
+
+    policyScreen.hidden = true;
+
+    readerApp.hidden = true;
 
 }
 
 
-/* ==============================================
-   GET BROWSER VOICES
-============================================== */
+/* ======================================================
+   إظهار سياسة الاستخدام
+====================================================== */
 
-function loadVoices() {
+function showPolicyScreen() {
 
-    /*
-       Get all voices installed/available
-       on the user's device.
-    */
+    loginScreen.hidden = true;
 
-    voices =
-        speechSynthesis.getVoices();
+    policyScreen.hidden = false;
 
+    readerApp.hidden = true;
 
-    /*
-       Some browsers return voices that
-       aren't English.
-
-       We only want English voices.
-    */
-
-    const englishVoices =
-        voices.filter(
-            voice =>
-                voice.lang &&
-                voice.lang
-                    .toLowerCase()
-                    .startsWith("en")
-        );
+}
 
 
-    /*
-       Clear current options.
-    */
+/* ======================================================
+   إظهار القارئ
+====================================================== */
 
-    voiceSelect.innerHTML = "";
+function showReaderApp() {
 
+    loginScreen.hidden = true;
 
-    /*
-       If there are no voices yet,
-       show a message.
+    policyScreen.hidden = true;
 
-       Some browsers load voices
-       asynchronously.
-    */
+    readerApp.hidden = false;
 
-    if (
-        englishVoices.length === 0
-    ) {
-
-        const option =
-            document.createElement(
-                "option"
-            );
-
-        option.textContent =
-            "Loading English voices...";
-
-        option.disabled = true;
-
-        voiceSelect.appendChild(
-            option
-        );
-
-        return;
-    }
+}
 
 
-    /*
-       Sort voices.
+/* ======================================================
+   LOGIN
+====================================================== */
 
-       We try to put more natural
-       sounding voices near the top.
+loginForm.addEventListener(
+    "submit",
+    function (event) {
 
-       Words such as:
-       "Natural"
-       "Online"
-       "Neural"
+        event.preventDefault();
 
-       are often associated with
-       higher-quality voices.
-    */
-
-    englishVoices.sort(
-        (a, b) => {
-
-            const aScore =
-                getVoiceQualityScore(a);
-
-            const bScore =
-                getVoiceQualityScore(b);
-
-            return bScore - aScore;
-        }
-    );
+        const code =
+            accessCodeInput.value.trim();
 
 
-    /*
-       Create dropdown options.
-    */
+        /*
+           يجب أن يكون 6 أرقام.
+        */
 
-    englishVoices.forEach(
-        voice => {
+        if (!/^\d{6}$/.test(code)) {
 
-            const option =
-                document.createElement(
-                    "option"
-                );
+            loginError.textContent =
+                "الرجاء إدخال رمز سري مكوّن من 6 أرقام.";
 
-
-            /*
-               Use a unique value.
-            */
-
-            option.value =
-                `${voice.name}|${voice.lang}`;
-
-
-            /*
-               Create friendly label.
-            */
-
-            option.textContent =
-                createVoiceLabel(voice);
-
-
-            voiceSelect.appendChild(
-                option
-            );
-        }
-    );
-
-
-    /*
-       Try to restore the voice
-       previously selected by the user.
-    */
-
-    const savedVoice =
-        localStorage.getItem(
-            "pdfReaderVoice"
-        );
-
-
-    if (savedVoice) {
-
-        const matchingVoice =
-            englishVoices.find(
-                voice =>
-                    `${voice.name}|${voice.lang}` ===
-                    savedVoice
-            );
-
-
-        if (matchingVoice) {
-
-            selectedVoice =
-                matchingVoice;
-
-            voiceSelect.value =
-                savedVoice;
+            loginError.hidden = false;
 
             return;
+
         }
-    }
 
 
-    /*
-       No saved voice.
+        /*
+           البحث عن الملف.
+        */
 
-       Choose the highest-quality
-       voice from our sorted list.
-    */
-
-    selectedVoice =
-        englishVoices[0];
+        const pdfPath =
+            ACCESS_CODES[code];
 
 
-    voiceSelect.value =
-        `${selectedVoice.name}|${selectedVoice.lang}`;
-}
+        if (!pdfPath) {
+
+            loginError.textContent =
+                "الرمز غير صحيح. تأكد من إدخال الرمز الصحيح.";
+
+            loginError.hidden = false;
+
+            return;
+
+        }
 
 
-/* ==============================================
-   VOICE QUALITY SCORE
-============================================== */
+        /*
+           حفظ الملف المصرح به.
+        */
 
-function getVoiceQualityScore(voice) {
-
-    let score = 0;
-
-
-    const name =
-        voice.name.toLowerCase();
+        authorizedPdfPath =
+            pdfPath;
 
 
-    /*
-       These keywords often indicate
-       higher-quality voices.
-    */
-
-    if (name.includes("natural")) {
-
-        score += 100;
-    }
-
-
-    if (name.includes("neural")) {
-
-        score += 90;
-    }
-
-
-    if (name.includes("online")) {
-
-        score += 80;
-    }
-
-
-    /*
-       Prefer United States English
-       for this English-learning project.
-    */
-
-    if (
-        voice.lang.toLowerCase() ===
-        "en-us"
-    ) {
-
-        score += 30;
-    }
-
-
-    /*
-       Prefer United Kingdom English
-       next.
-    */
-
-    if (
-        voice.lang.toLowerCase() ===
-        "en-gb"
-    ) {
-
-        score += 20;
-    }
-
-
-    return score;
-}
-
-
-/* ==============================================
-   CREATE VOICE LABEL
-============================================== */
-
-function createVoiceLabel(voice) {
-
-    /*
-       Example:
-
-       Microsoft Jenny Online (Natural)
-       English (United States)
-    */
-
-    const language =
-        getLanguageName(
-            voice.lang
+        sessionStorage.setItem(
+            "accessGranted",
+            "true"
         );
 
 
-    return `${voice.name} — ${language}`;
-}
-
-
-/* ==============================================
-   LANGUAGE NAME
-============================================== */
-
-function getLanguageName(languageCode) {
-
-    try {
-
-        return new Intl.DisplayNames(
-            ["en"],
-            {
-                type: "language"
-            }
-        ).of(languageCode);
-
-    } catch {
-
-        return languageCode;
-
-    }
-}
-
-
-/* ==============================================
-   VOICE SELECT EVENT
-============================================== */
-
-voiceSelect.addEventListener(
-    "change",
-    function() {
-
-        const value =
-            this.value;
+        sessionStorage.setItem(
+            "authorizedPdfPath",
+            authorizedPdfPath
+        );
 
 
         /*
-           Find the selected voice.
+           الانتقال إلى السياسة.
         */
 
-        selectedVoice =
-            voices.find(
-                voice =>
-                    `${voice.name}|${voice.lang}` ===
-                    value
-            );
+        loginError.hidden = true;
 
+        policyAgreement.checked = false;
 
-        /*
-           Save the selection.
+        policyError.hidden = true;
 
-           This means when the student
-           returns later, their preferred
-           voice will still be selected.
-        */
-
-        if (selectedVoice) {
-
-            localStorage.setItem(
-                "pdfReaderVoice",
-                value
-            );
-
-
-            pronunciationStatus.textContent =
-                `🎙️ ${selectedVoice.name}`;
-        }
+        showPolicyScreen();
 
     }
 );
 
 
-/* ==============================================
-   SPEED CONTROL
-============================================== */
+/* ======================================================
+   منع إدخال أي شيء غير الأرقام
+====================================================== */
 
-speedRange.addEventListener(
+accessCodeInput.addEventListener(
     "input",
-    function() {
+    function () {
 
-        speechRate =
-            parseFloat(this.value);
+        this.value =
+            this.value
+                .replace(/\D/g, "")
+                .slice(0, 6);
+
+    }
+);
 
 
-        updateSpeedDisplay();
+/* ======================================================
+   POLICY AGREEMENT
+====================================================== */
+
+continueButton.addEventListener(
+    "click",
+    async function () {
+
+        if (!policyAgreement.checked) {
+
+            policyError.textContent =
+                "يجب الموافقة على الإقرار قبل المتابعة.";
+
+            policyError.hidden = false;
+
+            return;
+
+        }
+
+
+        policyError.hidden = true;
 
 
         /*
-           Save speed.
+           التأكد من وجود ملف.
         */
 
-        localStorage.setItem(
-            "pdfReaderSpeechRate",
-            speechRate
+        if (!authorizedPdfPath) {
+
+            authorizedPdfPath =
+                sessionStorage.getItem(
+                    "authorizedPdfPath"
+                );
+
+        }
+
+
+        if (!authorizedPdfPath) {
+
+            showLoginScreen();
+
+            return;
+
+        }
+
+
+        /*
+           حفظ الموافقة.
+        */
+
+        sessionStorage.setItem(
+            "policyAccepted",
+            "true"
+        );
+
+
+        showReaderApp();
+
+
+        await openPDF(
+            authorizedPdfPath
         );
 
     }
 );
 
 
-/* ==============================================
-   UPDATE SPEED DISPLAY
-============================================== */
+/* ======================================================
+   استعادة الجلسة
+====================================================== */
 
-function updateSpeedDisplay() {
+function restoreSession() {
 
-    speedValue.textContent =
-        `${speechRate.toFixed(2)}×`;
-}
-
-
-/* ==============================================
-   TEST VOICE
-============================================== */
-
-testVoiceButton.addEventListener(
-    "click",
-    function() {
-
-        speak(
-            "Hello! This is a pronunciation test."
+    const accessGranted =
+        sessionStorage.getItem(
+            "accessGranted"
         );
 
-    }
-);
+
+    const policyAccepted =
+        sessionStorage.getItem(
+            "policyAccepted"
+        );
 
 
-/* ==============================================
-   TEXT TO SPEECH
-============================================== */
+    const savedPdfPath =
+        sessionStorage.getItem(
+            "authorizedPdfPath"
+        );
 
-function speak(text) {
-
-    /*
-       Make sure browser supports
-       speech synthesis.
-    */
 
     if (
-        !("speechSynthesis" in window)
+        accessGranted === "true" &&
+        savedPdfPath
     ) {
 
-        alert(
-            "Text-to-speech is not supported in this browser."
-        );
-
-        return;
-    }
+        authorizedPdfPath =
+            savedPdfPath;
 
 
-    /*
-       Stop anything currently speaking.
-    */
+        if (
+            policyAccepted === "true"
+        ) {
 
-    speechSynthesis.cancel();
+            showReaderApp();
 
-
-    /*
-       Create speech object.
-    */
-
-    const utterance =
-        new SpeechSynthesisUtterance(
-            text
-        );
-
-
-    /*
-       Use selected voice.
-    */
-
-    if (selectedVoice) {
-
-        utterance.voice =
-            selectedVoice;
-
-
-        /*
-           Use the voice's actual
-           language.
-
-           This is better than always
-           forcing en-US.
-        */
-
-        utterance.lang =
-            selectedVoice.lang;
-
-    } else {
-
-        /*
-           Fallback.
-        */
-
-        utterance.lang =
-            "en-US";
-    }
-
-
-    /*
-       Use selected speed.
-    */
-
-    utterance.rate =
-        speechRate;
-
-
-    /*
-       Normal pitch.
-    */
-
-    utterance.pitch =
-        1;
-
-
-    /*
-       Update status when speech starts.
-    */
-
-    utterance.onstart =
-        function() {
-
-            pronunciationStatus.textContent =
-                `🔊 ${text}`;
-
-        };
-
-
-    /*
-       Update status when speech finishes.
-    */
-
-    utterance.onend =
-        function() {
-
-            pronunciationStatus.textContent =
-                "🔊 Click English text";
-
-        };
-
-
-    /*
-       Handle errors.
-    */
-
-    utterance.onerror =
-        function(event) {
-
-            console.error(
-                "Speech error:",
-                event
+            openPDF(
+                authorizedPdfPath
             );
 
-            pronunciationStatus.textContent =
-                "⚠️ Could not play voice";
+        } else {
 
-        };
+            showPolicyScreen();
+
+        }
 
 
-    /*
-       Speak.
-    */
+        return;
 
-    speechSynthesis.speak(
-        utterance
-    );
+    }
+
+
+    showLoginScreen();
+
 }
 
 
-/* ==============================================
-   OPEN PDF
-============================================== */
+/* ======================================================
+   تحميل PDF
+====================================================== */
 
-async function openPDF(file) {
-
-    if (!file) {
-        return;
-    }
-
-
-    if (
-        file.type !==
-        "application/pdf"
-    ) {
-
-        alert(
-            "Please select a PDF file."
-        );
-
-        return;
-    }
-
+async function openPDF(
+    pdfPath
+) {
 
     try {
+
+        statusMessage.textContent =
+            "جارٍ تحميل الملف...";
+
+
+        /*
+           تحميل الملف.
+        */
+
+        const response =
+            await fetch(
+                pdfPath,
+                {
+                    cache: "no-store"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `HTTP ${response.status}`
+            );
+
+        }
+
 
         const arrayBuffer =
-            await file.arrayBuffer();
+            await response.arrayBuffer();
 
 
-        const typedArray =
+        /*
+           تحويل البيانات إلى Uint8Array.
+        */
+
+        const data =
             new Uint8Array(
                 arrayBuffer
             );
 
 
         /*
-           Load PDF.
+           PDF.js.
         */
 
+        const loadingTask =
+            pdfjsLib.getDocument({
+                data: data
+            });
+
+
         pdfDocument =
-            await pdfjsLib
-                .getDocument({
-                    data: typedArray
-                })
-                .promise;
+            await loadingTask.promise;
 
 
         /*
-           Update page count.
+           عدد الصفحات.
         */
 
         totalPagesElement.textContent =
             pdfDocument.numPages;
 
 
-        /*
-           Start from page 1.
-        */
-
         currentPage = 1;
 
+        scale = 1;
 
-        /*
-           Hide welcome screen.
-        */
-
-        welcomeScreen.style.display =
-            "none";
-
-
-        /*
-           Show file name.
-        */
 
         statusMessage.textContent =
-            file.name;
+            "تم تحميل الملف بنجاح";
 
 
         /*
-           Render page.
+           رسم الصفحة الأولى.
         */
 
         await renderPage(
@@ -803,36 +560,74 @@ async function openPDF(file) {
 
         updateNavigation();
 
-    } catch (error) {
+    }
 
-        console.error(error);
+    catch (error) {
 
-        alert(
-            "There was a problem opening this PDF."
+        console.error(
+            "خطأ في تحميل PDF:",
+            error
         );
 
+
+        statusMessage.textContent =
+            "تعذر تحميل الملف";
+
     }
+
 }
 
 
-/* ==============================================
-   RENDER PAGE
-============================================== */
+/* ======================================================
+   رسم صفحة PDF
+====================================================== */
 
 async function renderPage(
     pageNumber
 ) {
 
     if (!pdfDocument) {
+
         return;
+
     }
 
+
+    /*
+       إنشاء رقم للعملية الحالية.
+    */
+
+    const thisRenderId =
+        ++renderId;
+
+
+    /*
+       الحصول على الصفحة.
+    */
 
     const page =
         await pdfDocument.getPage(
             pageNumber
         );
 
+
+    /*
+       إذا بدأت عملية رسم أخرى،
+       تجاهل هذه العملية.
+    */
+
+    if (
+        thisRenderId !== renderId
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+       viewport الأساسي.
+    */
 
     const viewport =
         page.getViewport({
@@ -841,21 +636,21 @@ async function renderPage(
 
 
     /*
-       Clear previous page.
+       تنظيف الصفحة السابقة.
     */
 
-    pdfViewer.innerHTML =
-        "";
+    pdfViewer.innerHTML = "";
 
 
     /*
-       Create page container.
+       حاوية الصفحة.
     */
 
     const pageContainer =
         document.createElement(
             "div"
         );
+
 
     pageContainer.className =
         "pdf-page";
@@ -864,12 +659,15 @@ async function renderPage(
     pageContainer.style.width =
         `${viewport.width}px`;
 
+
     pageContainer.style.height =
         `${viewport.height}px`;
 
 
     /*
-       Canvas.
+       ==================================================
+       CANVAS
+       ==================================================
     */
 
     const canvas =
@@ -884,29 +682,71 @@ async function renderPage(
         );
 
 
-    const devicePixelRatio =
+    /*
+       دعم الشاشات عالية الدقة.
+    */
+
+    const outputScale =
         window.devicePixelRatio || 1;
 
 
     canvas.width =
-        viewport.width *
-        devicePixelRatio;
+        Math.floor(
+            viewport.width *
+            outputScale
+        );
+
 
     canvas.height =
-        viewport.height *
-        devicePixelRatio;
+        Math.floor(
+            viewport.height *
+            outputScale
+        );
+
 
     canvas.style.width =
         `${viewport.width}px`;
+
 
     canvas.style.height =
         `${viewport.height}px`;
 
 
-    context.scale(
-        devicePixelRatio,
-        devicePixelRatio
-    );
+    /*
+       تحويل الرسم إلى Retina resolution.
+    */
+
+    const renderContext = {
+
+        canvasContext:
+            context,
+
+        viewport:
+            page.getViewport({
+                scale:
+                    scale *
+                    outputScale
+            })
+
+    };
+
+
+    /*
+       رسم PDF.
+    */
+
+    await page.render(
+        renderContext
+    ).promise;
+
+
+    if (
+        thisRenderId !== renderId
+    ) {
+
+        return;
+
+    }
 
 
     pageContainer.appendChild(
@@ -915,43 +755,32 @@ async function renderPage(
 
 
     /*
-       Text layer.
+       ==================================================
+       TEXT LAYER
+       ==================================================
     */
 
-    const textLayer =
+    const textLayerDiv =
         document.createElement(
             "div"
         );
 
-    textLayer.className =
-        "text-layer";
+
+    /*
+       الاسم الذي يستخدمه PDF.js.
+    */
+
+    textLayerDiv.className =
+        "textLayer";
 
 
     pageContainer.appendChild(
-        textLayer
-    );
-
-
-    pdfViewer.appendChild(
-        pageContainer
+        textLayerDiv
     );
 
 
     /*
-       Render PDF.
-    */
-
-    await page.render({
-
-        canvasContext: context,
-
-        viewport: viewport
-
-    }).promise;
-
-
-    /*
-       Get PDF text.
+       الحصول على النص.
     */
 
     const textContent =
@@ -959,204 +788,242 @@ async function renderPage(
 
 
     /*
-       Build clickable text.
+       ==================================================
+       PDF.JS NATIVE TEXT LAYER
+       ==================================================
+
+       في PDF.js 4.10.38،
+       TextLayer متوفر من pdfjsLib.
+
+       لا نقوم بتحديد:
+
+       left
+       top
+       font-size
+       transform
+
+       بأنفسنا.
+
+       PDF.js يقوم بكل ذلك.
     */
 
-    createTextLayer(
-        textContent,
-        viewport,
-        textLayer
+    if (
+        typeof pdfjsLib.TextLayer ===
+        "function"
+    ) {
+
+        const textLayer =
+            new pdfjsLib.TextLayer({
+
+                textContentSource:
+                    textContent,
+
+                container:
+                    textLayerDiv,
+
+                viewport:
+                    viewport
+
+            });
+
+
+        await textLayer.render();
+
+    }
+
+    else {
+
+        /*
+           في حال كانت نسخة CDN لا تصدر
+           TextLayer بهذه الطريقة.
+        */
+
+        console.error(
+            "PDF.js TextLayer غير متوفر في هذه النسخة."
+        );
+
+
+        statusMessage.textContent =
+            "خطأ في تشغيل طبقة النص.";
+
+        return;
+
+    }
+
+
+    /*
+       إضافة الصفحة.
+    */
+
+    pdfViewer.appendChild(
+        pageContainer
     );
 
 
+    /*
+       إضافة النقر للنص.
+    */
+
+    setupTextInteraction(
+        textLayerDiv
+    );
+
+
+    /*
+       تحديث المعلومات.
+    */
+
     currentPageElement.textContent =
-        pageNumber;
+        currentPage;
 
 
     zoomLevelElement.textContent =
         `${Math.round(scale * 100)}%`;
 
 
-    /*
-       Scroll back to top.
-    */
+    selectedTextElement =
+        null;
 
-    document
-        .querySelector(
-            ".viewer-container"
-        )
-        .scrollTop = 0;
 }
 
 
-/* ==============================================
-   CREATE TEXT LAYER
-============================================== */
+/* ======================================================
+   التعامل مع نص TextLayer
+====================================================== */
 
-function createTextLayer(
-    textContent,
-    viewport,
+function setupTextInteraction(
     textLayer
 ) {
 
-    textContent.items.forEach(
-        item => {
+    const spans =
+        textLayer.querySelectorAll(
+            "span"
+        );
+
+
+    spans.forEach(
+        function (span) {
 
             const text =
-                item.str;
+                normalizeText(
+                    span.textContent
+                );
 
 
-            /*
-               Ignore empty items.
-            */
+            if (!text) {
 
-            if (!text.trim()) {
                 return;
+
             }
 
 
             /*
-               Transform PDF coordinates.
-            */
-
-            const transform =
-                pdfjsLib.Util.transform(
-                    viewport.transform,
-                    item.transform
-                );
-
-
-            const x =
-                transform[4];
-
-            const y =
-                transform[5];
-
-
-            /*
-               Determine font size.
-            */
-
-            const fontSize =
-                Math.sqrt(
-                    transform[2] *
-                    transform[2] +
-                    transform[3] *
-                    transform[3]
-                );
-
-
-            /*
-               Create text element.
-            */
-
-            const span =
-                document.createElement(
-                    "span"
-                );
-
-
-            span.textContent =
-                text;
-
-
-            span.style.left =
-                `${x}px`;
-
-
-            span.style.top =
-                `${y - fontSize}px`;
-
-
-            span.style.fontSize =
-                `${fontSize}px`;
-
-
-            /*
-               Only make English text
-               clickable.
+               نضيف النقر فقط للنص الإنجليزي.
             */
 
             if (
-                containsEnglish(text)
+                !containsEnglish(
+                    text
+                )
             ) {
 
-                span.classList.add(
-                    "clickable-word"
-                );
-
-
-                span.dataset.text =
-                    text.trim();
-
-
-                span.addEventListener(
-                    "click",
-                    function(event) {
-
-                        event.stopPropagation();
-
-
-                        selectAndSpeak(
-                            span,
-                            span.dataset.text
-                        );
-
-                    }
-                );
+                return;
 
             }
 
 
-            textLayer.appendChild(
-                span
+            span.classList.add(
+                "clickable-word"
+            );
+
+
+            span.dataset.speechText =
+                text;
+
+
+            span.title =
+                "اضغط لسماع النطق";
+
+
+            span.addEventListener(
+                "click",
+                function (event) {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+
+                    selectTextAndSpeak(
+                        span,
+                        text
+                    );
+
+                }
             );
 
         }
     );
+
 }
 
 
-/* ==============================================
-   DETECT ENGLISH
-============================================== */
+/* ======================================================
+   تنظيف النص
+====================================================== */
 
-function containsEnglish(text) {
+function normalizeText(
+    text
+) {
+
+    return text
+        .replace(/\s+/g, " ")
+        .trim();
+
+}
+
+
+/* ======================================================
+   اكتشاف الإنجليزية
+====================================================== */
+
+function containsEnglish(
+    text
+) {
 
     return /[A-Za-z]/.test(
         text
     );
+
 }
 
 
-/* ==============================================
-   SELECT + SPEAK
-============================================== */
+/* ======================================================
+   تحديد النص + النطق
+====================================================== */
 
-function selectAndSpeak(
+function selectTextAndSpeak(
     element,
     text
 ) {
 
     /*
-       Remove previous highlight.
+       إزالة التحديد السابق.
     */
 
     if (
-        selectedWordElement
+        selectedTextElement
     ) {
 
-        selectedWordElement
-            .classList
-            .remove(
-                "selected-word"
-            );
+        selectedTextElement.classList.remove(
+            "selected-word"
+        );
 
     }
 
 
     /*
-       Highlight current text.
+       تحديد الحالي.
     */
 
     element.classList.add(
@@ -1164,74 +1031,536 @@ function selectAndSpeak(
     );
 
 
-    selectedWordElement =
+    selectedTextElement =
         element;
 
 
     /*
-       Speak.
+       النطق.
     */
 
-    speak(text);
+    speak(
+        text
+    );
+
 }
 
 
-/* ==============================================
-   NEXT PAGE
-============================================== */
+/* ======================================================
+   SPEECH SYNTHESIS
+====================================================== */
 
-async function nextPage() {
+function speak(
+    text
+) {
 
-    if (!pdfDocument) {
+    if (
+        !("speechSynthesis" in window)
+    ) {
+
+        pronunciationStatus.textContent =
+            "النطق غير مدعوم في هذا المتصفح.";
+
         return;
+
     }
+
+
+    text =
+        normalizeText(
+            text
+        );
+
+
+    if (!text) {
+
+        return;
+
+    }
+
+
+    /*
+       إيقاف النطق السابق.
+    */
+
+    speechSynthesis.cancel();
+
+
+    /*
+       إنشاء النطق.
+    */
+
+    const utterance =
+        new SpeechSynthesisUtterance(
+            text
+        );
+
+
+    /*
+       الصوت.
+    */
+
+    if (selectedVoice) {
+
+        utterance.voice =
+            selectedVoice;
+
+        utterance.lang =
+            selectedVoice.lang;
+
+    }
+
+    else {
+
+        utterance.lang =
+            "en-US";
+
+    }
+
+
+    /*
+       السرعة.
+    */
+
+    utterance.rate =
+        speechRate;
+
+
+    /*
+       Pitch.
+    */
+
+    utterance.pitch =
+        1;
+
+
+    /*
+       بداية النطق.
+    */
+
+    utterance.onstart =
+        function () {
+
+            pronunciationStatus.textContent =
+                `🔊 ${text}`;
+
+        };
+
+
+    /*
+       نهاية النطق.
+    */
+
+    utterance.onend =
+        function () {
+
+            pronunciationStatus.textContent =
+                "🔊 اضغط على النص الإنجليزي لسماع النطق";
+
+        };
+
+
+    /*
+       الخطأ.
+    */
+
+    utterance.onerror =
+        function (error) {
+
+            console.error(
+                "Speech error:",
+                error
+            );
+
+            pronunciationStatus.textContent =
+                "تعذر تشغيل النطق.";
+
+        };
+
+
+    speechSynthesis.speak(
+        utterance
+    );
+
+}
+
+
+/* ======================================================
+   VOICES
+====================================================== */
+
+function loadVoices() {
+
+    if (
+        !("speechSynthesis" in window)
+    ) {
+
+        return;
+
+    }
+
+
+    voices =
+        speechSynthesis.getVoices();
+
+
+    /*
+       الإنجليزية فقط.
+    */
+
+    const englishVoices =
+        voices.filter(
+            voice =>
+                voice.lang &&
+                voice.lang
+                    .toLowerCase()
+                    .startsWith("en")
+        );
 
 
     if (
-        currentPage <
-        pdfDocument.numPages
+        englishVoices.length === 0
     ) {
 
-        currentPage++;
-
-        await renderPage(
-            currentPage
-        );
-
-        updateNavigation();
+        return;
 
     }
+
+
+    voiceSelect.innerHTML = "";
+
+
+    englishVoices.forEach(
+        function (voice) {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value =
+                `${voice.name}|${voice.lang}`;
+
+
+            option.textContent =
+                `${voice.name} — ${voice.lang}`;
+
+
+            voiceSelect.appendChild(
+                option
+            );
+
+        }
+    );
+
+
+    /*
+       استعادة الصوت.
+    */
+
+    const savedVoice =
+        localStorage.getItem(
+            "pdfReaderVoice"
+        );
+
+
+    if (savedVoice) {
+
+        const saved =
+            englishVoices.find(
+                voice =>
+                    `${voice.name}|${voice.lang}` ===
+                    savedVoice
+            );
+
+
+        if (saved) {
+
+            selectedVoice =
+                saved;
+
+            voiceSelect.value =
+                savedVoice;
+
+            return;
+
+        }
+
+    }
+
+
+    /*
+       اختيار أول صوت.
+    */
+
+    selectedVoice =
+        englishVoices[0];
+
+
+    voiceSelect.value =
+        `${selectedVoice.name}|${selectedVoice.lang}`;
+
 }
 
 
-/* ==============================================
-   PREVIOUS PAGE
-============================================== */
+/* ======================================================
+   تغيير الصوت
+====================================================== */
 
-async function previousPage() {
+voiceSelect.addEventListener(
+    "change",
+    function () {
+
+        const value =
+            this.value;
+
+
+        selectedVoice =
+            voices.find(
+                voice =>
+                    `${voice.name}|${voice.lang}` ===
+                    value
+            );
+
+
+        if (selectedVoice) {
+
+            localStorage.setItem(
+                "pdfReaderVoice",
+                value
+            );
+
+        }
+
+    }
+);
+
+
+/* ======================================================
+   SPEED
+====================================================== */
+
+function updateSpeed() {
+
+    speedValue.textContent =
+        `${speechRate.toFixed(2)}×`;
+
+}
+
+
+speedRange.addEventListener(
+    "input",
+    function () {
+
+        speechRate =
+            parseFloat(
+                this.value
+            );
+
+
+        updateSpeed();
+
+
+        localStorage.setItem(
+            "pdfReaderSpeechRate",
+            speechRate
+        );
+
+    }
+);
+
+
+/* ======================================================
+   اختبار الصوت
+====================================================== */
+
+testVoiceButton.addEventListener(
+    "click",
+    function () {
+
+        speak(
+            "Hello! This is a pronunciation test."
+        );
+
+    }
+);
+
+
+/* ======================================================
+   استعادة إعدادات السرعة
+====================================================== */
+
+function loadSpeechSettings() {
+
+    const savedRate =
+        localStorage.getItem(
+            "pdfReaderSpeechRate"
+        );
+
+
+    if (savedRate) {
+
+        const parsed =
+            parseFloat(
+                savedRate
+            );
+
+
+        if (
+            !Number.isNaN(parsed) &&
+            parsed >= 0.5 &&
+            parsed <= 1.5
+        ) {
+
+            speechRate =
+                parsed;
+
+        }
+
+    }
+
+
+    speedRange.value =
+        speechRate;
+
+
+    updateSpeed();
+
+}
+
+
+/* ======================================================
+   PAGE NAVIGATION
+====================================================== */
+
+async function goToPage(
+    pageNumber
+) {
 
     if (!pdfDocument) {
+
         return;
+
     }
 
 
-    if (currentPage > 1) {
-
-        currentPage--;
-
-        await renderPage(
-            currentPage
+    const target =
+        Math.max(
+            1,
+            Math.min(
+                pageNumber,
+                pdfDocument.numPages
+            )
         );
 
-        updateNavigation();
+
+    if (
+        target === currentPage &&
+        pdfViewer.children.length > 0
+    ) {
+
+        return;
 
     }
+
+
+    currentPage =
+        target;
+
+
+    await renderPage(
+        currentPage
+    );
+
+
+    updateNavigation();
+
 }
 
+/* ======================================================
+   الانتقال المباشر إلى صفحة
+====================================================== */
 
-/* ==============================================
-   NAVIGATION
-============================================== */
+pageInput.addEventListener(
+    "change",
+    function () {
+
+        if (!pdfDocument) {
+            return;
+        }
+
+        let requestedPage =
+            parseInt(this.value, 10);
+
+        /*
+           التأكد من أن الرقم صحيح
+        */
+
+        if (Number.isNaN(requestedPage)) {
+
+            this.value = currentPage;
+
+            return;
+        }
+
+        /*
+           منع تجاوز عدد الصفحات
+        */
+
+        requestedPage =
+            Math.max(
+                1,
+                Math.min(
+                    requestedPage,
+                    pdfDocument.numPages
+                )
+            );
+
+        /*
+           الانتقال للصفحة
+        */
+
+        goToPage(requestedPage);
+
+    }
+);
+
+/* ======================================================
+   الصفحة السابقة
+====================================================== */
+
+previousPageButton.addEventListener(
+    "click",
+    function () {
+
+        goToPage(
+            currentPage - 1
+        );
+
+    }
+);
+
+
+/* ======================================================
+   الصفحة التالية
+====================================================== */
+
+nextPageButton.addEventListener(
+    "click",
+    function () {
+
+        goToPage(
+            currentPage + 1
+        );
+
+    }
+);
+
+
+/* ======================================================
+   تحديث أزرار الصفحات
+====================================================== */
 
 function updateNavigation() {
 
@@ -1244,6 +1573,7 @@ function updateNavigation() {
             true;
 
         return;
+
     }
 
 
@@ -1254,17 +1584,20 @@ function updateNavigation() {
     nextPageButton.disabled =
         currentPage >=
         pdfDocument.numPages;
+
 }
 
 
-/* ==============================================
-   ZOOM IN
-============================================== */
+/* ======================================================
+   ZOOM
+====================================================== */
 
 async function zoomIn() {
 
     if (!pdfDocument) {
+
         return;
+
     }
 
 
@@ -1272,24 +1605,25 @@ async function zoomIn() {
 
 
     if (scale > 3) {
+
         scale = 3;
+
     }
 
 
     await renderPage(
         currentPage
     );
+
 }
 
-
-/* ==============================================
-   ZOOM OUT
-============================================== */
 
 async function zoomOut() {
 
     if (!pdfDocument) {
+
         return;
+
     }
 
 
@@ -1297,63 +1631,22 @@ async function zoomOut() {
 
 
     if (scale < 0.5) {
+
         scale = 0.5;
+
     }
 
 
     await renderPage(
         currentPage
     );
+
 }
 
 
-/* ==============================================
-   FILE INPUTS
-============================================== */
-
-pdfInput.addEventListener(
-    "change",
-    function() {
-
-        openPDF(
-            this.files[0]
-        );
-
-    }
-);
-
-
-pdfInputLarge.addEventListener(
-    "change",
-    function() {
-
-        openPDF(
-            this.files[0]
-        );
-
-    }
-);
-
-
-/* ==============================================
-   PAGE BUTTONS
-============================================== */
-
-nextPageButton.addEventListener(
-    "click",
-    nextPage
-);
-
-
-previousPageButton.addEventListener(
-    "click",
-    previousPage
-);
-
-
-/* ==============================================
-   ZOOM BUTTONS
-============================================== */
+/* ======================================================
+   أزرار التكبير
+====================================================== */
 
 zoomInButton.addEventListener(
     "click",
@@ -1367,30 +1660,55 @@ zoomOutButton.addEventListener(
 );
 
 
-/* ==============================================
-   KEYBOARD SHORTCUTS
-============================================== */
+/* ======================================================
+   اختصارات لوحة المفاتيح
+====================================================== */
 
 document.addEventListener(
     "keydown",
-    function(event) {
+    function (event) {
+
+        const active =
+            document.activeElement;
+
+
+        /*
+           لا نستخدم الاختصارات
+           أثناء إدخال الرمز.
+        */
 
         if (
-            event.key ===
-            "ArrowRight"
+            active &&
+            (
+                active.tagName === "INPUT" ||
+                active.tagName === "TEXTAREA" ||
+                active.tagName === "SELECT"
+            )
         ) {
 
-            nextPage();
+            return;
 
         }
 
 
         if (
-            event.key ===
-            "ArrowLeft"
+            event.key === "ArrowLeft"
         ) {
 
-            previousPage();
+            goToPage(
+                currentPage + 1
+            );
+
+        }
+
+
+        if (
+            event.key === "ArrowRight"
+        ) {
+
+            goToPage(
+                currentPage - 1
+            );
 
         }
 
@@ -1417,37 +1735,48 @@ document.addEventListener(
 );
 
 
-/* ==============================================
-   INITIALIZE SPEECH SETTINGS
-============================================== */
+/* ======================================================
+   إيقاف النطق عند إغلاق الصفحة
+====================================================== */
+
+window.addEventListener(
+    "beforeunload",
+    function () {
+
+        if (
+            "speechSynthesis" in window
+        ) {
+
+            speechSynthesis.cancel();
+
+        }
+
+    }
+);
+
+
+/* ======================================================
+   INITIALIZATION
+====================================================== */
 
 loadSpeechSettings();
 
-updateSpeedDisplay();
+
+if (
+    "speechSynthesis" in window
+) {
+
+    loadVoices();
 
 
-/*
-==================================================
- IMPORTANT:
- VOICES MAY LOAD AFTER PAGE LOAD
-==================================================
+    speechSynthesis.onvoiceschanged =
+        loadVoices;
 
- Chrome and other browsers sometimes don't
- immediately return the voices.
-
- So we listen for voiceschanged.
-*/
-
-speechSynthesis.onvoiceschanged =
-    function() {
-
-        loadVoices();
-
-    };
+}
 
 
-/*
-   Try loading immediately too.
-*/
+/* ======================================================
+   تشغيل الجلسة
+====================================================== */
 
-loadVoices();
+restoreSession();

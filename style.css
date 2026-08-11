@@ -1,6 +1,34 @@
-/* =========================================
+/* =========================================================
+   القارئ التفاعلي — التصميم العربي
+========================================================= */
+
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-light: #eff6ff;
+
+    --background: #eef3f8;
+    --surface: #ffffff;
+    --surface-soft: #f8fafc;
+
+    --border: #dfe5ec;
+    --border-dark: #d7dee8;
+
+    --text: #172033;
+    --text-soft: #64748b;
+    --text-muted: #7a8494;
+
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+
+    --success: #15803d;
+
+    --radius: 12px;
+}
+
+/* =========================================================
    RESET
-========================================= */
+========================================================= */
 
 * {
     margin: 0;
@@ -8,28 +36,297 @@
     box-sizing: border-box;
 }
 
-
-/* =========================================
-   BODY
-========================================= */
+html,
+body {
+    min-height: 100%;
+}
 
 body {
     font-family:
+        "Tajawal",
         Arial,
         "Segoe UI",
         sans-serif;
 
-    background: #eef3f8;
-
-    color: #172033;
-
+    background: var(--background);
+    color: var(--text);
     min-height: 100vh;
 }
 
+/* =========================================================
+   COMMON
+========================================================= */
 
-/* =========================================
+[hidden] {
+    display: none !important;
+}
+
+button,
+input,
+select {
+    font-family: inherit;
+}
+
+/* =========================================================
+   AUTH SCREENS
+========================================================= */
+
+.auth-screen {
+    min-height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 25px;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(37, 99, 235, 0.10),
+            transparent 35%
+        ),
+        var(--background);
+}
+
+.auth-card,
+.policy-card {
+    width: min(480px, 100%);
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 22px;
+
+    padding: 42px 38px;
+
+    box-shadow:
+        0 18px 50px rgba(15, 23, 42, 0.09);
+}
+
+.policy-card {
+    width: min(650px, 100%);
+}
+
+.auth-icon,
+.policy-icon {
+    width: 70px;
+    height: 70px;
+
+    margin: 0 auto 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: var(--primary-light);
+
+    border-radius: 19px;
+
+    font-size: 31px;
+}
+
+.auth-card h1,
+.policy-card h1 {
+    text-align: center;
+
+    font-size: 25px;
+    font-weight: 800;
+
+    margin-bottom: 10px;
+}
+
+.auth-description,
+.policy-intro {
+    color: var(--text-soft);
+
+    text-align: center;
+
+    line-height: 1.8;
+
+    font-size: 14px;
+
+    margin-bottom: 28px;
+}
+
+.auth-card form {
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-card label {
+    font-size: 13px;
+    font-weight: 700;
+
+    margin-bottom: 8px;
+}
+
+.code-input {
+    width: 100%;
+    height: 58px;
+
+    border: 1px solid var(--border-dark);
+
+    border-radius: 12px;
+
+    background: var(--surface-soft);
+
+    text-align: center;
+
+    font-size: 25px;
+    font-weight: 700;
+
+    letter-spacing: 9px;
+
+    direction: ltr;
+
+    outline: none;
+
+    transition: 0.2s ease;
+}
+
+.code-input::placeholder {
+    color: #cbd5e1;
+}
+
+.code-input:focus {
+    border-color: var(--primary);
+
+    background: white;
+
+    box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.10);
+}
+
+.primary-button {
+    width: 100%;
+    height: 48px;
+
+    margin-top: 16px;
+
+    border: 0;
+    border-radius: 10px;
+
+    background: var(--primary);
+    color: white;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+}
+
+.primary-button:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.primary-button:active {
+    transform: translateY(0);
+}
+
+.auth-note {
+    margin-top: 22px;
+
+    text-align: center;
+
+    color: var(--text-muted);
+
+    font-size: 11px;
+}
+
+/* =========================================================
+   POLICY
+========================================================= */
+
+.policy-intro {
+    margin-bottom: 20px;
+}
+
+.policy-box {
+    background: var(--surface-soft);
+
+    border: 1px solid var(--border);
+
+    border-radius: 13px;
+
+    padding: 22px;
+
+    text-align: right;
+}
+
+.policy-box h2 {
+    font-size: 16px;
+    margin-bottom: 13px;
+}
+
+.policy-box ul {
+    padding-right: 20px;
+}
+
+.policy-box li {
+    color: #475569;
+
+    font-size: 13px;
+
+    line-height: 1.9;
+
+    margin-bottom: 6px;
+}
+
+.agreement-label {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    margin-top: 20px;
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+    line-height: 1.8;
+}
+
+.agreement-label input {
+    width: 18px;
+    height: 18px;
+
+    flex: 0 0 auto;
+
+    margin-top: 3px;
+
+    accent-color: var(--primary);
+
+    cursor: pointer;
+}
+
+.form-error {
+    color: var(--danger);
+
+    background: var(--danger-light);
+
+    border: 1px solid #fecaca;
+
+    border-radius: 8px;
+
+    padding: 9px 11px;
+
+    margin-top: 10px;
+
+    font-size: 12px;
+
+    line-height: 1.6;
+}
+
+/* =========================================================
    APP
-========================================= */
+========================================================= */
 
 .app {
     min-height: 100vh;
@@ -38,17 +335,16 @@ body {
     flex-direction: column;
 }
 
-
-/* =========================================
+/* =========================================================
    TOP BAR
-========================================= */
+========================================================= */
 
 .topbar {
     height: 76px;
 
     background: white;
 
-    border-bottom: 1px solid #dfe5ec;
+    border-bottom: 1px solid var(--border);
 
     display: flex;
 
@@ -58,11 +354,6 @@ body {
 
     padding: 0 28px;
 }
-
-
-/* =========================================
-   BRAND
-========================================= */
 
 .brand {
     display: flex;
@@ -78,7 +369,7 @@ body {
 
     border-radius: 11px;
 
-    background: #2563eb;
+    background: var(--primary);
 
     display: flex;
     align-items: center;
@@ -89,388 +380,41 @@ body {
 
 .brand h1 {
     font-size: 17px;
-
-    font-weight: 700;
-
+    text-align: center;
+    font-weight: 800;
     margin-bottom: 3px;
 }
 
 .brand p {
     font-size: 12px;
-
-    color: #7a8494;
-}
-
-
-/* =========================================
-   UPLOAD BUTTON
-========================================= */
-
-.upload-button {
-    background: #2563eb;
-
-    color: white;
-
-    padding: 10px 17px;
-
-    border-radius: 9px;
-
-    font-size: 14px;
-
-    font-weight: 600;
-
-    cursor: pointer;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-    transition: 0.2s ease;
-}
-
-.upload-button:hover {
-    background: #1d4ed8;
-
-    transform: translateY(-1px);
-}
-
-
-/* =========================================
-   TOOLBAR
-========================================= */
-
-.toolbar {
-    height: 58px;
-
-    background: #f8fafc;
-
-    border-bottom: 1px solid #dfe5ec;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 40px;
-}
-
-.toolbar-group {
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-}
-
-
-/* =========================================
-   TOOL BUTTON
-========================================= */
-
-.tool-button {
-    width: 34px;
-    height: 34px;
-
-    border: 1px solid #d7dee8;
-
-    background: white;
-
-    border-radius: 7px;
-
-    cursor: pointer;
-
-    font-size: 18px;
-
-    color: #334155;
-
-    transition: 0.15s ease;
-}
-
-.tool-button:hover {
-    background: #eff6ff;
-
-    border-color: #93c5fd;
-
-    color: #2563eb;
-}
-
-.tool-button:disabled {
-    opacity: 0.4;
-
-    cursor: not-allowed;
-}
-
-
-/* =========================================
-   PAGE INFO
-========================================= */
-
-.page-info {
-    min-width: 70px;
-
     text-align: center;
 
-    font-size: 14px;
-
-    color: #475569;
+    color: var(--text-muted);
 }
 
-.page-separator {
-    margin: 0 4px;
+.access-badge {
+    background: #f0fdf4;
 
-    color: #a0a8b5;
+    color: var(--success);
+
+    border: 1px solid #bbf7d0;
+
+    border-radius: 20px;
+
+    padding: 7px 12px;
+
+    font-size: 11px;
+    font-weight: 700;
 }
 
-
-/* =========================================
-   ZOOM
-========================================= */
-
-.zoom-level {
-    min-width: 55px;
-
-    text-align: center;
-
-    font-size: 13px;
-
-    color: #475569;
-}
-
-
-/* =========================================
-   VIEWER
-========================================= */
-
-.viewer-container {
-    flex: 1;
-
-    overflow: auto;
-
-    padding: 35px;
-
-    display: flex;
-
-    justify-content: center;
-
-    align-items: flex-start;
-
-    background:
-        #e8edf3;
-}
-
-
-/* =========================================
-   PDF VIEWER
-========================================= */
-
-.pdf-viewer {
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    gap: 25px;
-}
-
-
-/* =========================================
-   PDF PAGE
-========================================= */
-
-.pdf-page {
-    position: relative;
-
-    background: white;
-
-    box-shadow:
-        0 4px 15px rgba(0, 0, 0, 0.12);
-
-    overflow: hidden;
-}
-
-
-/* =========================================
-   PDF CANVAS
-========================================= */
-
-.pdf-page canvas {
-    display: block;
-}
-
-
-/* =========================================
-   TEXT LAYER
-========================================= */
-
-.text-layer {
-    position: absolute;
-
-    inset: 0;
-
-    overflow: hidden;
-
-    line-height: 1;
-
-    opacity: 1;
-}
-
-
-/*
-   Each PDF text item will be placed
-   precisely over the canvas.
-*/
-
-.text-layer span {
-    position: absolute;
-
-    white-space: pre;
-
-    transform-origin: 0% 0%;
-
-    color: transparent;
-
-    cursor: text;
-}
-
-
-/* =========================================
-   CLICKABLE ENGLISH WORD
-========================================= */
-
-.text-layer .clickable-word {
-    color: transparent;
-
-    cursor: pointer;
-
-    border-radius: 3px;
-
-    transition:
-        background 0.15s ease,
-        box-shadow 0.15s ease;
-}
-
-
-/*
-   Very subtle hover effect.
-
-   Because the original PDF text is underneath,
-   we only show a small transparent highlight.
-*/
-
-.text-layer .clickable-word:hover {
-    background: rgba(37, 99, 235, 0.15);
-}
-
-
-/* =========================================
-   SELECTED WORD
-========================================= */
-
-.text-layer .selected-word {
-    background: rgba(37, 99, 235, 0.28);
-
-    box-shadow:
-        0 0 0 1px rgba(37, 99, 235, 0.2);
-}
-
-
-/* =========================================
-   WELCOME SCREEN
-========================================= */
-
-.welcome-screen {
-    width: min(500px, 90vw);
-
-    margin-top: 100px;
-
-    background: white;
-
-    border: 1px solid #dfe5ec;
-
-    border-radius: 18px;
-
-    padding: 50px 35px;
-
-    text-align: center;
-
-    box-shadow:
-        0 10px 30px rgba(15, 23, 42, 0.07);
-}
-
-.welcome-icon {
-    width: 70px;
-    height: 70px;
-
-    background: #eff6ff;
-
-    border-radius: 18px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    margin: 0 auto 20px;
-
-    font-size: 32px;
-}
-
-.welcome-screen h2 {
-    font-size: 23px;
-
-    margin-bottom: 10px;
-}
-
-.welcome-screen p {
-    color: #64748b;
-
-    line-height: 1.6;
-
-    font-size: 14px;
-
-    margin-bottom: 25px;
-}
-
-
-/* =========================================
-   LARGE UPLOAD BUTTON
-========================================= */
-
-.large-upload-button {
-    display: inline-block;
-
-    background: #2563eb;
-
-    color: white;
-
-    padding: 13px 25px;
-
-    border-radius: 10px;
-
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition: 0.2s ease;
-}
-
-.large-upload-button:hover {
-    background: #1d4ed8;
-}
-
-
-/* =========================================
+/* =========================================================
    VOICE PANEL
-========================================= */
+========================================================= */
 
 .voice-panel {
     background: white;
 
-    border-bottom: 1px solid #dfe5ec;
+    border-bottom: 1px solid var(--border);
 
     padding: 14px 24px;
 }
@@ -489,19 +433,21 @@ body {
     gap: 22px;
 }
 
-
-/* =========================================
-   VOICE CONTROL
-========================================= */
-
-.voice-control {
+.voice-control,
+.speed-control {
     display: flex;
 
     flex-direction: column;
 
     gap: 6px;
+}
 
+.voice-control {
     min-width: 330px;
+}
+
+.speed-control {
+    min-width: 230px;
 }
 
 .voice-control label,
@@ -510,13 +456,8 @@ body {
 
     font-weight: 700;
 
-    color: #64748b;
-
-    text-transform: uppercase;
-
-    letter-spacing: 0.4px;
+    color: var(--text-soft);
 }
-
 
 #voiceSelect {
     height: 40px;
@@ -525,11 +466,11 @@ body {
 
     padding: 0 12px;
 
-    border: 1px solid #d7dee8;
+    border: 1px solid var(--border-dark);
 
     border-radius: 9px;
 
-    background: #f8fafc;
+    background: var(--surface-soft);
 
     color: #1e293b;
 
@@ -538,34 +479,13 @@ body {
     outline: none;
 
     cursor: pointer;
-
-    transition: 0.2s ease;
-}
-
-#voiceSelect:hover {
-    border-color: #93c5fd;
 }
 
 #voiceSelect:focus {
-    border-color: #2563eb;
+    border-color: var(--primary);
 
     box-shadow:
         0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-
-/* =========================================
-   SPEED
-========================================= */
-
-.speed-control {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 6px;
-
-    min-width: 230px;
 }
 
 .speed-row {
@@ -585,7 +505,7 @@ body {
 #speedRange {
     width: 120px;
 
-    accent-color: #2563eb;
+    accent-color: var(--primary);
 
     cursor: pointer;
 }
@@ -597,13 +517,10 @@ body {
 
     font-weight: 700;
 
-    color: #2563eb;
+    color: var(--primary);
+
+    direction: ltr;
 }
-
-
-/* =========================================
-   TEST VOICE BUTTON
-========================================= */
 
 .test-voice-button {
     height: 40px;
@@ -614,9 +531,9 @@ body {
 
     border-radius: 9px;
 
-    background: #eff6ff;
+    background: var(--primary-light);
 
-    color: #2563eb;
+    color: var(--primary);
 
     font-size: 13px;
 
@@ -637,16 +554,354 @@ body {
     transform: translateY(-1px);
 }
 
-.test-voice-button:active {
-    transform: translateY(0);
+/* =========================================================
+   TOOLBAR
+========================================================= */
+
+.toolbar {
+    height: 58px;
+
+    background: var(--surface-soft);
+
+    border-bottom: 1px solid var(--border);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 40px;
+}
+
+.toolbar-group {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+.tool-button {
+    width: 34px;
+    height: 34px;
+
+    border: 1px solid var(--border-dark);
+
+    background: white;
+
+    border-radius: 7px;
+
+    cursor: pointer;
+
+    font-size: 18px;
+
+    color: #334155;
+
+    transition: 0.15s ease;
+}
+
+.tool-button:hover {
+    background: var(--primary-light);
+
+    border-color: #93c5fd;
+
+    color: var(--primary);
+}
+
+.tool-button:disabled {
+    opacity: 0.4;
+
+    cursor: not-allowed;
+}
+
+.page-info {
+    min-width: 70px;
+
+    text-align: center;
+
+    font-size: 14px;
+
+    color: #475569;
+
+    direction: ltr;
+}
+
+.page-separator {
+    margin: 0 4px;
+
+    color: #a0a8b5;
+}
+
+.zoom-level {
+    min-width: 55px;
+
+    text-align: center;
+
+    font-size: 13px;
+
+    color: #475569;
+
+    direction: ltr;
+}
+
+/* =========================================================
+   VIEWER
+========================================================= */
+
+.viewer-container {
+    flex: 1;
+
+    overflow: auto;
+
+    padding: 35px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: flex-start;
+
+    background: #e8edf3;
+}
+
+.pdf-viewer {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 25px;
+}
+
+.pdf-page {
+    position: relative;
+
+    background: white;
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.12);
+
+    overflow: hidden;
+}
+
+.pdf-page canvas {
+    display: block;
+}
+
+/* =========================================================
+   PDF.JS NATIVE TEXT LAYER
+========================================================= */
+
+.pdf-page {
+    position: relative;
+    background: white;
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.12);
 }
 
 
-/* =========================================
-   MOBILE VOICE PANEL
-========================================= */
+/*
+   PDF.js هو المسؤول عن:
+   position
+   transform
+   font-size
+   width
+   height
+*/
+
+.textLayer {
+    position: absolute;
+
+    inset: 0;
+
+    overflow: hidden;
+
+    opacity: 1;
+
+    line-height: 1;
+
+    text-align: initial;
+
+    forced-color-adjust: none;
+
+    transform-origin: 0 0;
+
+    z-index: 2;
+}
+
+
+/*
+   لا نحدد position أو transform
+   للـ span هنا.
+
+   PDF.js يقوم بذلك.
+*/
+
+.textLayer span {
+    color: transparent;
+
+    position: absolute;
+
+    white-space: pre;
+
+    cursor: text;
+
+    transform-origin: 0% 0%;
+
+    user-select: text;
+
+    -webkit-user-select: text;
+}
+
+
+/*
+   النص الإنجليزي القابل للنقر.
+*/
+
+.textLayer .clickable-word {
+    color: transparent;
+
+    cursor: pointer;
+
+    border-radius: 3px;
+
+    transition:
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+
+/*
+   عند مرور الماوس.
+*/
+
+.textLayer .clickable-word:hover {
+    background:
+        rgba(37, 99, 235, 0.15);
+}
+
+
+/*
+   النص المحدد.
+*/
+
+.textLayer .selected-word {
+    background:
+        rgba(37, 99, 235, 0.28);
+
+    box-shadow:
+        0 0 0 1px
+        rgba(37, 99, 235, 0.20);
+}
+
+
+/*
+   تأكد أن الـ canvas تحت TextLayer.
+*/
+
+.pdf-page canvas {
+    position: relative;
+
+    z-index: 1;
+
+    display: block;
+}
+
+.text-layer .clickable-word {
+    color: transparent;
+
+    cursor: pointer;
+
+    border-radius: 3px;
+
+    transition:
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.text-layer .clickable-word:hover {
+    background: rgba(37, 99, 235, 0.15);
+}
+
+.text-layer .selected-word {
+    background: rgba(37, 99, 235, 0.28);
+
+    box-shadow:
+        0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+/* =========================================================
+   STATUS BAR
+========================================================= */
+
+.statusbar {
+    min-height: 42px;
+
+    background: white;
+
+    border-top: 1px solid var(--border);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 8px 20px;
+
+    font-size: 12px;
+
+    color: var(--text-soft);
+}
+
+.pronunciation-status {
+    color: var(--primary);
+
+    font-weight: 600;
+
+    text-align: left;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
 
 @media (max-width: 700px) {
+
+    .auth-screen {
+        padding: 15px;
+    }
+
+    .auth-card,
+    .policy-card {
+        padding: 30px 22px;
+        border-radius: 18px;
+    }
+
+    .topbar {
+        height: auto;
+
+        padding: 15px;
+
+        gap: 15px;
+
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+    .brand {
+        justify-content: center;
+    }
+
+    .access-badge {
+        text-align: center;
+    }
 
     .voice-panel {
         padding: 15px;
@@ -677,62 +932,6 @@ body {
         width: 100%;
     }
 
-}
-
-
-/* =========================================
-   STATUS BAR
-========================================= */
-
-.statusbar {
-    height: 42px;
-
-    background: white;
-
-    border-top: 1px solid #dfe5ec;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    padding: 0 20px;
-
-    font-size: 12px;
-
-    color: #64748b;
-}
-
-.pronunciation-status {
-    color: #2563eb;
-
-    font-weight: 600;
-}
-
-
-/* =========================================
-   MOBILE
-========================================= */
-
-@media (max-width: 700px) {
-
-    .topbar {
-        height: auto;
-
-        padding: 15px;
-
-        gap: 15px;
-
-        flex-direction: column;
-
-        align-items: stretch;
-    }
-
-    .upload-button {
-        justify-content: center;
-    }
-
     .toolbar {
         gap: 20px;
     }
@@ -742,13 +941,74 @@ body {
     }
 
     .statusbar {
-        padding: 0 10px;
+        flex-direction: column;
+
+        align-items: stretch;
+
+        padding: 8px 10px;
 
         font-size: 10px;
     }
 
-    .brand {
-        justify-content: center;
+    .pronunciation-status {
+        text-align: right;
     }
+}
 
+/* =========================================================
+   PAGE NUMBER INPUT
+========================================================= */
+
+.page-input {
+    width: 55px;
+    height: 36px;
+
+    padding: 0 8px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: white;
+
+    color: var(--text);
+
+    font-family: "Tajawal", sans-serif;
+    font-size: 15px;
+
+    text-align: center;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.page-input:focus {
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(37, 99, 235, 0.12);
+}
+
+
+/*
+   إزالة الأسهم في Chrome / Edge
+*/
+
+.page-input::-webkit-inner-spin-button,
+.page-input::-webkit-outer-spin-button {
+    opacity: 0;
+}
+
+
+/*
+   Firefox
+*/
+
+.page-input {
+    appearance: textfield;
+    -moz-appearance: textfield;
 }
