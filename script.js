@@ -1096,26 +1096,53 @@ function speak(
         );
 
 
-    /*
-       الصوت.
-    */
+   /*
+   الصوت.
 
-    if (selectedVoice) {
+   إذا كان صوت Samantha متوفراً،
+   استخدمه تلقائياً.
 
-        utterance.voice =
-            selectedVoice;
+   إذا لم يكن متوفراً،
+   استخدم الصوت الذي اختاره المستخدم.
+*/
 
-        utterance.lang =
-            selectedVoice.lang;
+const voices =
+    speechSynthesis.getVoices();
 
-    }
+const samantha =
+    voices.find(
+        voice =>
+            voice.name
+                .toLowerCase()
+                .includes("samantha")
+    );
 
-    else {
+if (samantha) {
 
-        utterance.lang =
-            "en-US";
+    utterance.voice =
+        samantha;
 
-    }
+    utterance.lang =
+        samantha.lang;
+
+}
+
+else if (selectedVoice) {
+
+    utterance.voice =
+        selectedVoice;
+
+    utterance.lang =
+        selectedVoice.lang;
+
+}
+
+else {
+
+    utterance.lang =
+        "en-US";
+
+}
 
 
     /*
