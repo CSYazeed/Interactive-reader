@@ -725,50 +725,155 @@ function isSentenceEnding(text) {
     );
 }
 
+
 function getVisualRect(span) {
-    const rect = span.getBoundingClientRect();
+    const rect =
+        span.getBoundingClientRect();
 
     return {
         left: rect.left,
         right: rect.right,
         top: rect.top,
         bottom: rect.bottom,
-        centerY: rect.top + rect.height / 2,
-        height: Math.max(rect.height, 1)
+        centerY:
+            rect.top +
+            rect.height / 2,
+        height:
+            Math.max(
+                rect.height,
+                1
+            )
     };
 }
 
+
 function sortSpansForReadingOrder(spans) {
-    return [...spans].sort((a, b) => {
-        const ar = getVisualRect(a);
-        const br = getVisualRect(b);
 
-        const sameLineTolerance =
-            Math.max(
-                3,
-                Math.min(ar.height, br.height) * 0.65
+    return [...spans].sort(
+        (a, b) => {
+
+            const ar =
+                getVisualRect(a);
+
+            const br =
+                getVisualRect(b);
+
+            const lineTolerance =
+                Math.max(
+                    3,
+                    Math.min(
+                        ar.height,
+                        br.height
+                    ) * 0.65
+                );
+
+            /*
+               Same visual line:
+               sort from left to right.
+            */
+
+            if (
+                Math.abs(
+                    ar.centerY -
+                    br.centerY
+                ) <=
+                lineTolerance
+            ) {
+                return (
+                    ar.left -
+                    br.left
+                );
+            }
+
+            /*
+               Different lines:
+               sort from top to bottom.
+            */
+
+            return (
+                ar.top -
+                br.top
             );
-
-        if (
-            Math.abs(ar.centerY - br.centerY) <=
-            sameLineTolerance
-        ) {
-            return ar.left - br.left;
         }
-
-        return ar.top - br.top;
-    });
+    );
 }
 
-function buildSentenceGroups(allSpans) {
-    /*
-       IMPORTANT:
-       We use ALL non-empty spans here.
 
-       Do NOT filter punctuation out.
-       This is what fixes:
-           How + are + you + ?
-    */
+function getWordCount(text) {
+
+    const clean =
+        normalizeText(text);
+
+    if (!clean) {
+        return 0;
+    }
+
+    return clean
+        .split(/\s+/)
+        .filter(Boolean)
+        .length;
+}
+
+
+/*
+   Determines whether the spans are physically
+   on approximately the same visual line.
+*/
+
+function isSameVisualLine(
+    spanA,
+    spanB
+) {
+
+    const a =
+        getVisualRect(spanA);
+
+    const b =
+        getVisualRect(spanB);
+
+    const tolerance =
+        Math.max(
+            3,
+            Math.min(
+                a.height,
+                b.height
+            ) * 0.65
+        );
+
+    return (
+        Math.abs(
+            a.centerY -
+            b.centerY
+        ) <=
+        tolerance
+    );
+}
+
+
+/*
+   Build LOCAL sentence groups.
+
+   Important:
+   We DO NOT simply keep adding spans until punctuation.
+
+   That can cause a PDF with missing punctuation
+   to become one giant sentence.
+
+   Instead, text on the same visual line is grouped
+   together, which correctly handles:
+
+       how old are you
+
+       how are you?
+
+       what is your name
+
+   without accidentally reading the entire page.
+*/
+
+function buildSentenceGroups(
+    allSpans
+) {
 
     const ordered =
         sortSpansForReadingOrder(
@@ -781,10 +886,19 @@ function buildSentenceGroups(allSpans) {
         );
 
     const groups = [];
-    let current = [];
 
-    for (let i = 0; i < ordered.length; i++) {
-        const span = ordered[i];
+    let currentGroup = [];
+
+
+    for (
+        let i = 0;
+        i < ordered.length;
+        i++
+    ) {
+
+        const span =
+            ordered[i];
+
         const text =
             normalizeText(
                 span.textContent
@@ -794,98 +908,130 @@ function buildSentenceGroups(allSpans) {
             continue;
         }
 
-        current.push(span);
 
         /*
-           End the sentence as soon as punctuation arrives.
-
-           This works even when "?" is its own PDF.js span.
+           First span of a new group.
         */
-
-        if (isSentenceEnding(text)) {
-            groups.push(current);
-            current = [];
-            continue;
-        }
-
-        const next = ordered[i + 1];
-
-        if (!next || current.length === 0) {
-            continue;
-        }
-
-        /*
-           Keep wrapped sentences together.
-           Only break on an unusually large vertical gap
-           when the accumulated text already looks sentence-like.
-        */
-
-        const currentRect =
-            getVisualRect(span);
-
-        const nextRect =
-            getVisualRect(next);
-
-        const verticalGap =
-            Math.abs(
-                nextRect.centerY -
-                currentRect.centerY
-            );
-
-        const lineHeight =
-            Math.max(
-                currentRect.height,
-                nextRect.height,
-                10
-            );
-
-        const currentText =
-            normalizeText(
-                current
-                    .map(
-                        s =>
-                            normalizeText(
-                                s.textContent
-                            )
-                    )
-                    .join(" ")
-            );
-
-        const wordCount =
-            currentText
-                ? currentText.split(/\s+/).length
-                : 0;
 
         if (
-            verticalGap >
-                lineHeight * 2 &&
-            wordCount >= 2
+            currentGroup.length === 0
         ) {
-            groups.push(current);
-            current = [];
+
+            currentGroup.push(
+                span
+            );
+
+            continue;
+        }
+
+
+        const previousSpan =
+            currentGroup[
+                currentGroup.length - 1
+            ];
+
+
+        /*
+           Are we still on the same visual line?
+        */
+
+        if (
+            isSameVisualLine(
+                previousSpan,
+                span
+            )
+        ) {
+
+            currentGroup.push(
+                span
+            );
+
+        } else {
+
+            /*
+               New visual line.
+
+               Finish the old group.
+            */
+
+            groups.push(
+                currentGroup
+            );
+
+            currentGroup = [
+                span
+            ];
+        }
+
+
+        /*
+           If punctuation ends this span,
+           close the group immediately.
+        */
+
+        if (
+            isSentenceEnding(
+                text
+            )
+        ) {
+
+            groups.push(
+                currentGroup
+            );
+
+            currentGroup = [];
         }
     }
 
-    if (current.length) {
-        groups.push(current);
+
+    /*
+       Save the last group.
+    */
+
+    if (
+        currentGroup.length > 0
+    ) {
+
+        groups.push(
+            currentGroup
+        );
     }
+
 
     return groups;
 }
 
-function createSentenceMap(sentenceGroups) {
-    const map = new Map();
 
-    sentenceGroups.forEach(group => {
-        group.forEach(span => {
-            map.set(span, group);
-        });
-    });
+function createSentenceMap(
+    sentenceGroups
+) {
+
+    const map =
+        new Map();
+
+    sentenceGroups.forEach(
+        group => {
+
+            group.forEach(
+                span => {
+
+                    map.set(
+                        span,
+                        group
+                    );
+                }
+            );
+        }
+    );
 
     return map;
 }
 
-function getGroupText(group) {
+
+function getGroupText(
+    group
+) {
+
     return normalizeText(
         group
             .map(
@@ -899,7 +1045,26 @@ function getGroupText(group) {
     );
 }
 
-function isCompleteSentenceText(text) {
+
+/*
+   IMPORTANT:
+
+   A sentence can exist WITHOUT punctuation
+   in the PDF text extraction.
+
+   Example:
+
+       how old are you
+
+   So punctuation is NOT required.
+
+   Minimum = 2 words.
+*/
+
+function isCompleteSentenceText(
+    text
+) {
+
     const clean =
         normalizeText(text);
 
@@ -907,13 +1072,15 @@ function isCompleteSentenceText(text) {
         return false;
     }
 
-    const words =
-        clean.split(/\s+/).filter(Boolean);
+    const wordCount =
+        getWordCount(clean);
 
-    return (
-        words.length >= 2 &&
-        isSentenceEnding(clean)
-    );
+    /*
+       Two or more words = a sentence/phrase.
+       Punctuation is optional.
+    */
+
+    return wordCount >= 2;
 }
 
 function findSentenceForSpan(
@@ -1109,16 +1276,7 @@ function setupTextInteraction(
             span.title =
                 "اضغط لسماع النطق";
 
-            /*
-               SINGLE CLICK
-
-               If the clicked span belongs to a complete
-               sentence, read the complete sentence.
-
-               Otherwise read only the exact word.
-            */
-
-            span.addEventListener(
+           span.addEventListener(
                 "click",
                 function (event) {
                     event.preventDefault();
@@ -1131,157 +1289,19 @@ function setupTextInteraction(
                         return;
                     }
 
-                    if (
-                        pageContainer._speechClickTimer
-                    ) {
-                        clearTimeout(
-                            pageContainer
-                                ._speechClickTimer
-                        );
-                    }
+                    /*
+                       Read exactly what PDF.js placed in
+                       this span — could be one word or a
+                       full sentence, depending on the PDF.
+                       No delay, no double-click needed.
+                    */
 
-                    pageContainer
-                        ._speechClickTimer =
-                        setTimeout(
-                            function () {
-                                pageContainer
-                                    ._speechClickTimer =
-                                    null;
-
-                                const sentence =
-                                    findSentenceForSpan(
-                                        span,
-                                        sentenceMap
-                                    );
-
-                                const sentenceText =
-                                    getGroupText(
-                                        sentence
-                                    );
-
-                                /*
-                                   Example:
-                                       How
-                                       are
-                                       you
-                                       ?
-
-                                   sentenceText becomes:
-                                       How are you ?
-                                */
-
-                                if (
-                                    sentence.length >= 2 &&
-                                    isCompleteSentenceText(
-                                        sentenceText
-                                    )
-                                ) {
-                                    handlePronunciation(
-                                        pageContainer,
-                                        sentence,
-                                        pageNumber,
-                                        sentenceText
-                                    );
-
-                                    return;
-                                }
-
-                                /*
-                                   A sentence may be inside a
-                                   single PDF.js span.
-                                */
-
-                                if (
-                                    isCompleteSentenceText(
-                                        spanText
-                                    )
-                                ) {
-                                    handlePronunciation(
-                                        pageContainer,
-                                        [span],
-                                        pageNumber,
-                                        spanText
-                                    );
-
-                                    return;
-                                }
-
-                                /*
-                                   Not a complete sentence:
-                                   read only the clicked word.
-                                */
-
-                                const word =
-                                    getWordAtPoint(
-                                        event,
-                                        span
-                                    );
-
-                                handlePronunciation(
-                                    pageContainer,
-                                    [span],
-                                    pageNumber,
-                                    word
-                                );
-                            },
-                            180
-                        );
-                }
-            );
-
-            /*
-               DOUBLE CLICK
-               Always read the complete detected sentence.
-            */
-
-            span.addEventListener(
-                "dblclick",
-                function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    if (
-                        pageContainer._speechClickTimer
-                    ) {
-                        clearTimeout(
-                            pageContainer
-                                ._speechClickTimer
-                        );
-
-                        pageContainer
-                            ._speechClickTimer =
-                            null;
-                    }
-
-                    if (
-                        activeMode !==
-                        "hand"
-                    ) {
-                        return;
-                    }
-
-                    const sentence =
-                        findSentenceForSpan(
-                            span,
-                            sentenceMap
-                        );
-
-                    const sentenceText =
-                        getGroupText(
-                            sentence
-                        );
-
-                    if (
-                        sentence.length &&
-                        sentenceText
-                    ) {
-                        handlePronunciation(
-                            pageContainer,
-                            sentence,
-                            pageNumber,
-                            sentenceText
-                        );
-                    }
+                    handlePronunciation(
+                        pageContainer,
+                        [span],
+                        pageNumber,
+                        spanText
+                    );
                 }
             );
         }

@@ -787,6 +787,7 @@ select {
 
 .textLayer .clickable-text {
     color: transparent;
+    text-align: center;
 
     cursor: pointer;
 }
@@ -797,10 +798,10 @@ select {
 */
 
 .textLayer .speech-highlight {
-    background: rgba(250, 204, 21, 0.52);
+    background: transparent;
 
     box-shadow:
-        0 0 0 1px rgba(245, 158, 11, 0.08);
+        0 0 0 1px rgba(245, 158, 11, 0);
 
     border-radius: 3px;
 }
