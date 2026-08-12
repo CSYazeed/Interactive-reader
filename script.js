@@ -106,6 +106,14 @@ let renderGeneration = 0;
 let currentSpeechSentence = [];
 let currentSpeechPageContainer = null;
 
+/*
+   iOS Safari silently kills speech if the
+   utterance object is garbage-collected before
+   it finishes. Keeping a global reference to it
+   prevents that.
+*/
+let activeUtterance = null;
+
 let annotationStore = {};
 let annotationStorageKey = "";
 
@@ -1428,12 +1436,19 @@ function speak(
 
     /*
        إنشاء النطق.
+
+       نحتفظ بمرجع عام (activeUtterance) لمنع
+       iOS Safari من حذف الكائن من الذاكرة قبل
+       انتهاء النطق (خلل معروف في iOS).
     */
 
-    const utterance =
+    activeUtterance =
         new SpeechSynthesisUtterance(
             text
         );
+
+    const utterance =
+        activeUtterance;
 
 
    /*
@@ -1553,8 +1568,20 @@ else {
         };
 
 
-    speechSynthesis.speak(
-        utterance
+    /*
+       تأخير بسيط لأن iOS Safari قد يتجاهل
+       speak() إذا استُدعي مباشرة بعد cancel().
+    */
+
+    setTimeout(
+        function () {
+
+            speechSynthesis.speak(
+                utterance
+            );
+
+        },
+        50
     );
 
 }
