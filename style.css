@@ -679,45 +679,6 @@ select {
     direction: ltr;
 }
 
-.thickness-control {
-    display: flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    padding-right: 4px;
-
-    white-space: nowrap;
-}
-
-.thickness-control label {
-    color: var(--text-soft);
-
-    font-size: 10px;
-
-    font-weight: 700;
-}
-
-#penThickness {
-    width: 100px;
-
-    accent-color: #dc2626;
-
-    cursor: pointer;
-}
-
-#thicknessValue {
-    min-width: 18px;
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    color: #dc2626;
-
-    direction: ltr;
-}
 
 /* =========================================================
    VIEWER
@@ -878,8 +839,7 @@ body[data-reader-mode="eraser"] .textLayer {
     pointer-events: none;
 }
 
-body[data-reader-mode="hand"] .textLayer,
-body[data-reader-mode="highlighter"] .textLayer {
+body[data-reader-mode="hand"] .textLayer {
     pointer-events: auto;
 }
 
@@ -1259,16 +1219,6 @@ body[data-reader-mode="highlighter"] .textLayer {
         justify-content: center;
 
         flex-wrap: wrap;
-    }
-
-    .thickness-control {
-        width: 100%;
-
-        justify-content: center;
-    }
-
-    #penThickness {
-        width: 150px;
     }
 
     .viewer-container {

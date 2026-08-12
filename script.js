@@ -6,13 +6,12 @@
  الوظائف:
  1. تسجيل الدخول برمز من 6 أرقام
  2. سياسة الاستخدام
- 3. PDF.js — عرض مستمر للصفحات
- 4. تنقل بالصفحة + مزامنة مع التمرير
+ 3. PDF.js — عرض صفحة واحدة في كل مرة
+ 4. التنقل السابق / التالي + رقم الصفحة
  5. تكبير وتصغير
  6. 🖐️ النطق + تمييز مؤقت للجملة
- 7. ✏️ قلم أحمر مع سُمك قابل للتعديل
- 8. 🖍️ محدد أصفر للنص
- 9. 🧽 ممحاة كاملة للخطوط والتحديدات
+ 7. ✏️ قلم أحمر بسُمك ثابت 4px
+ 8. 🧽 ممحاة كاملة للخطوط والتحديدات
  10. حفظ التحديدات والرسومات بعد إغلاق المتصفح
  11. حفظ منفصل لكل PDF / رمز وصول
  12. إشعار أول استخدام
@@ -78,11 +77,8 @@ const speedValue = document.getElementById("speedValue");
 
 const handTool = document.getElementById("handTool");
 const penTool = document.getElementById("penTool");
-const highlighterTool = document.getElementById("highlighterTool");
 const eraserTool = document.getElementById("eraserTool");
 
-const penThickness = document.getElementById("penThickness");
-const thicknessValue = document.getElementById("thicknessValue");
 
 const pronunciationModal = document.getElementById("pronunciationModal");
 const understoodButton = document.getElementById("understoodButton");
@@ -103,11 +99,9 @@ let speechRate = 0.85;
 let authorizedPdfPath = null;
 let authorizedAccessCode = null;
 
-let activeMode = "hand"; // hand | pen | highlighter | eraser
+let activeMode = "hand"; // hand | pen | eraser
 
 let renderGeneration = 0;
-let pageObserver = null;
-let pageJumpTimer = null;
 
 let currentSpeechSentence = [];
 let currentSpeechPageContainer = null;
@@ -117,7 +111,6 @@ let annotationStorageKey = "";
 
 let activeDrawing = null;
 
-const renderedPages = new Map();
 
 
 /* ======================================================
@@ -233,8 +226,12 @@ function restoreSession() {
     const savedPdfPath =
         sessionStorage.getItem("authorizedPdfPath");
 
+    const savedAccessCode =
+        sessionStorage.getItem("authorizedAccessCode");
+
     if (accessGranted === "true" && savedPdfPath) {
         authorizedPdfPath = savedPdfPath;
+        authorizedAccessCode = savedAccessCode || null;
 
         if (policyAccepted === "true") {
             showReaderApp();
@@ -335,6 +332,7 @@ async function openPDF(pdfPath) {
             "جارٍ تحميل الملف...";
 
         window.speechSynthesis?.cancel();
+        clearTemporarySpeechHighlight();
 
         loadAnnotations();
 
@@ -346,35 +344,26 @@ async function openPDF(pdfPath) {
             throw new Error(`HTTP ${response.status}`);
         }
 
-        const arrayBuffer =
-            await response.arrayBuffer();
+        const arrayBuffer = await response.arrayBuffer();
+        const data = new Uint8Array(arrayBuffer);
 
-        const data =
-            new Uint8Array(arrayBuffer);
-
-        const loadingTask =
-            pdfjsLib.getDocument({ data });
-
-        pdfDocument =
-            await loadingTask.promise;
+        const loadingTask = pdfjsLib.getDocument({ data });
+        pdfDocument = await loadingTask.promise;
 
         totalPagesElement.textContent =
-            pdfDocument.numPages;
+            String(pdfDocument.numPages);
 
         currentPage = 1;
         pageInput.value = "1";
-
         scale = 1;
-
         zoomLevelElement.textContent = "100%";
 
-        await buildContinuousViewer();
+        await renderPage(currentPage);
 
         statusMessage.textContent =
             "تم تحميل الملف بنجاح";
 
         updateNavigation();
-
         maybeShowPronunciationNotice();
 
     } catch (error) {
@@ -393,301 +382,141 @@ async function openPDF(pdfPath) {
 
 
 /* ======================================================
-   CONTINUOUS VIEWER
+   SINGLE-PAGE VIEWER
 ====================================================== */
 
-async function buildContinuousViewer(targetPage = currentPage) {
+async function renderPage(pageNumber) {
     if (!pdfDocument) {
         return;
     }
 
-    renderGeneration++;
-
-    renderedPages.clear();
-
-    if (pageObserver) {
-        pageObserver.disconnect();
-        pageObserver = null;
-    }
-
-    pdfViewer.innerHTML = "";
-
-    const fragment = document.createDocumentFragment();
-
-    for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber++) {
-        const page = await pdfDocument.getPage(pageNumber);
-
-        const viewport = page.getViewport({ scale });
-
-        const pageContainer =
-            document.createElement("div");
-
-        pageContainer.className = "pdf-page";
-        pageContainer.dataset.pageNumber = String(pageNumber);
-
-        pageContainer.style.width =
-            `${viewport.width}px`;
-
-        pageContainer.style.height =
-            `${viewport.height}px`;
-
-        pageContainer.setAttribute(
-            "aria-label",
-            `صفحة ${pageNumber}`
-        );
-
-        const loadingLabel =
-            document.createElement("div");
-
-        loadingLabel.className = "page-loading";
-        loadingLabel.textContent = `صفحة ${pageNumber}`;
-
-        pageContainer.appendChild(loadingLabel);
-        fragment.appendChild(pageContainer);
-    }
-
-    pdfViewer.appendChild(fragment);
-
-    setupPageObserver();
-
-    requestAnimationFrame(() => {
-        scrollToPage(targetPage, "auto");
-        renderNearbyPages(targetPage);
-    });
-}
-
-function setupPageObserver() {
-    const pageElements =
-        pdfViewer.querySelectorAll(".pdf-page");
-
-    pageObserver =
-        new IntersectionObserver(
-            (entries) => {
-                const visible =
-                    entries
-                        .filter(entry => entry.isIntersecting)
-                        .sort(
-                            (a, b) =>
-                                b.intersectionRatio -
-                                a.intersectionRatio
-                        );
-
-                if (visible.length > 0) {
-                    const pageNumber =
-                        Number(
-                            visible[0]
-                                .target
-                                .dataset
-                                .pageNumber
-                        );
-
-                    setCurrentPage(pageNumber);
-                    renderNearbyPages(pageNumber);
-                }
-            },
-            {
-                root: viewerContainer,
-                threshold: [0.25, 0.5, 0.75]
-            }
-        );
-
-    pageElements.forEach(pageElement => {
-        pageObserver.observe(pageElement);
-    });
-}
-
-function renderNearbyPages(centerPage) {
-    const first =
-        Math.max(1, centerPage - 1);
-
-    const last =
+    const target = Math.max(
+        1,
         Math.min(
-            pdfDocument.numPages,
-            centerPage + 1
-        );
+            Number(pageNumber) || 1,
+            pdfDocument.numPages
+        )
+    );
 
-    for (let pageNumber = first; pageNumber <= last; pageNumber++) {
-        renderPage(pageNumber);
-    }
-}
-
-async function renderPage(pageNumber) {
-    const pageContainer =
-        pdfViewer.querySelector(
-            `.pdf-page[data-page-number="${pageNumber}"]`
-        );
-
-    if (!pageContainer || renderedPages.has(pageNumber)) {
-        return;
-    }
-
-    renderedPages.set(pageNumber, true);
-
-    const generation = renderGeneration;
+    const generation = ++renderGeneration;
 
     try {
-        const page =
-            await pdfDocument.getPage(pageNumber);
+        const page = await pdfDocument.getPage(target);
 
         if (generation !== renderGeneration) {
             return;
         }
 
-        const viewport =
-            page.getViewport({ scale });
+        const viewport = page.getViewport({ scale });
+        const outputScale = window.devicePixelRatio || 1;
 
-        const outputScale =
-            window.devicePixelRatio || 1;
+        pdfViewer.innerHTML = "";
 
-        pageContainer.innerHTML = "";
+        const pageContainer = document.createElement("div");
+        pageContainer.className = "pdf-page";
+        pageContainer.dataset.pageNumber = String(target);
+        pageContainer.style.width = `${viewport.width}px`;
+        pageContainer.style.height = `${viewport.height}px`;
+        pageContainer.setAttribute("aria-label", `صفحة ${target}`);
 
-        /*
-         ==================================================
-         CANVAS
-         ==================================================
-        */
+        /* Canvas */
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d", { alpha: false });
 
-        const canvas =
-            document.createElement("canvas");
-
-        const context =
-            canvas.getContext("2d", {
-                alpha: false
-            });
-
-        canvas.width =
-            Math.floor(
-                viewport.width *
-                outputScale
-            );
-
-        canvas.height =
-            Math.floor(
-                viewport.height *
-                outputScale
-            );
-
-        canvas.style.width =
-            `${viewport.width}px`;
-
-        canvas.style.height =
-            `${viewport.height}px`;
-
+        canvas.width = Math.floor(viewport.width * outputScale);
+        canvas.height = Math.floor(viewport.height * outputScale);
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
         canvas.className = "pdf-canvas";
 
         await page.render({
             canvasContext: context,
             viewport: page.getViewport({
-                scale:
-                    scale *
-                    outputScale
+                scale: scale * outputScale
             })
         }).promise;
 
-        /*
-         ==================================================
-         TEXT LAYER
-         ==================================================
-        */
-
-        const textLayerDiv =
-            document.createElement("div");
-
-        textLayerDiv.className =
-            "textLayer";
-
-        const textContent =
-            await page.getTextContent();
-
-        if (typeof pdfjsLib.TextLayer !== "function") {
-            throw new Error(
-                "PDF.js TextLayer غير متوفر."
-            );
+        if (generation !== renderGeneration) {
+            return;
         }
 
-        const textLayer =
-            new pdfjsLib.TextLayer({
-                textContentSource: textContent,
-                container: textLayerDiv,
-                viewport
-            });
+        /* Text layer */
+        const textLayerDiv = document.createElement("div");
+        textLayerDiv.className = "textLayer";
+
+        const textContent = await page.getTextContent();
+
+        if (typeof pdfjsLib.TextLayer !== "function") {
+            throw new Error("PDF.js TextLayer غير متوفر.");
+        }
+
+        const textLayer = new pdfjsLib.TextLayer({
+            textContentSource: textContent,
+            container: textLayerDiv,
+            viewport
+        });
 
         await textLayer.render();
 
-        /*
-         ==================================================
-         ANNOTATION CANVAS
-         ==================================================
-        */
+        if (generation !== renderGeneration) {
+            return;
+        }
 
-        const annotationCanvas =
-            document.createElement("canvas");
-
-        annotationCanvas.className =
-            "annotation-canvas";
-
-        annotationCanvas.width =
-            Math.floor(
-                viewport.width *
-                outputScale
-            );
-
-        annotationCanvas.height =
-            Math.floor(
-                viewport.height *
-                outputScale
-            );
-
-        annotationCanvas.style.width =
-            `${viewport.width}px`;
-
-        annotationCanvas.style.height =
-            `${viewport.height}px`;
-
-        annotationCanvas.dataset.pageNumber =
-            String(pageNumber);
+        /* Annotation layer */
+        const annotationCanvas = document.createElement("canvas");
+        annotationCanvas.className = "annotation-canvas";
+        annotationCanvas.width = Math.floor(viewport.width * outputScale);
+        annotationCanvas.height = Math.floor(viewport.height * outputScale);
+        annotationCanvas.style.width = `${viewport.width}px`;
+        annotationCanvas.style.height = `${viewport.height}px`;
+        annotationCanvas.dataset.pageNumber = String(target);
 
         pageContainer.appendChild(canvas);
         pageContainer.appendChild(textLayerDiv);
         pageContainer.appendChild(annotationCanvas);
+        pdfViewer.appendChild(pageContainer);
 
         setupTextInteraction(
             textLayerDiv,
             pageContainer,
-            pageNumber
+            target
         );
 
         setupAnnotationCanvas(
             annotationCanvas,
             pageContainer,
-            pageNumber
+            target
         );
 
         redrawAnnotations(
             pageContainer,
-            pageNumber
+            target
         );
 
         applyModeToPage(pageContainer);
 
+        currentPage = target;
+        pageInput.value = String(target);
+        totalPagesElement.textContent = String(pdfDocument.numPages);
+        zoomLevelElement.textContent = `${Math.round(scale * 100)}%`;
+
+        updateNavigation();
+
     } catch (error) {
         console.error(
-            `تعذر رسم الصفحة ${pageNumber}:`,
+            `تعذر رسم الصفحة ${target}:`,
             error
         );
 
-        renderedPages.delete(pageNumber);
+        if (generation !== renderGeneration) {
+            return;
+        }
 
-        pageContainer.innerHTML = "";
-
-        const errorMessage =
-            document.createElement("div");
-
-        errorMessage.className = "page-error";
-        errorMessage.textContent =
-            `تعذر رسم الصفحة ${pageNumber}`;
-
-        pageContainer.appendChild(errorMessage);
+        pdfViewer.innerHTML = `
+            <div class="page-error">
+                تعذر رسم الصفحة ${target}
+            </div>
+        `;
     }
 }
 
@@ -701,18 +530,16 @@ function setCurrentPage(pageNumber) {
         return;
     }
 
-    currentPage =
-        Math.max(
-            1,
-            Math.min(
-                pageNumber,
-                pdfDocument.numPages
-            )
-        );
+    currentPage = Math.max(
+        1,
+        Math.min(
+            Number(pageNumber) || 1,
+            pdfDocument.numPages
+        )
+    );
 
-    pageInput.value =
-        String(currentPage);
-
+    pageInput.value = String(currentPage);
+    totalPagesElement.textContent = String(pdfDocument.numPages);
     updateNavigation();
 }
 
@@ -723,44 +550,31 @@ function updateNavigation() {
         return;
     }
 
-    previousPageButton.disabled =
-        currentPage <= 1;
-
-    nextPageButton.disabled =
-        currentPage >= pdfDocument.numPages;
+    previousPageButton.disabled = currentPage <= 1;
+    nextPageButton.disabled = currentPage >= pdfDocument.numPages;
 }
 
-function scrollToPage(pageNumber, behavior = "smooth") {
+async function goToPage(pageNumber) {
     if (!pdfDocument) {
         return;
     }
 
-    const target =
-        Math.max(
-            1,
-            Math.min(
-                Number(pageNumber) || 1,
-                pdfDocument.numPages
-            )
-        );
+    const target = Math.max(
+        1,
+        Math.min(
+            Number(pageNumber) || 1,
+            pdfDocument.numPages
+        )
+    );
 
-    const pageElement =
-        pdfViewer.querySelector(
-            `.pdf-page[data-page-number="${target}"]`
-        );
-
-    if (!pageElement) {
+    if (target === currentPage && pdfViewer.querySelector('.pdf-page')) {
+        pageInput.value = String(target);
+        updateNavigation();
         return;
     }
 
     setCurrentPage(target);
-
-    pageElement.scrollIntoView({
-        behavior,
-        block: "start"
-    });
-
-    renderNearbyPages(target);
+    await renderPage(target);
 }
 
 
@@ -774,88 +588,51 @@ function navigateFromPageInput() {
         return;
     }
 
-    let requested =
-        parseInt(
-            pageInput.value,
-            10
-        );
+    let requested = parseInt(pageInput.value, 10);
 
     if (Number.isNaN(requested)) {
-        pageInput.value =
-            String(currentPage);
+        pageInput.value = String(currentPage);
         return;
     }
 
-    requested =
-        Math.max(
-            1,
-            Math.min(
-                requested,
-                pdfDocument.numPages
-            )
-        );
+    requested = Math.max(
+        1,
+        Math.min(
+            requested,
+            pdfDocument.numPages
+        )
+    );
 
-    pageInput.value =
-        String(requested);
-
-    scrollToPage(requested);
+    pageInput.value = String(requested);
+    goToPage(requested);
 }
 
-/*
-   لا نحتاج إلى ضغط Enter.
-   عندما ينتهي المستخدم من الكتابة
-   ويترك خانة الرقم، ينتقل للصفحة.
-*/
-pageInput.addEventListener(
-    "change",
-    navigateFromPageInput
-);
-
-pageInput.addEventListener(
-    "blur",
-    navigateFromPageInput
-);
-
-pageInput.addEventListener(
-    "keydown",
-    function (event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            navigateFromPageInput();
-            pageInput.blur();
-        }
+pageInput.addEventListener("change", navigateFromPageInput);
+pageInput.addEventListener("blur", navigateFromPageInput);
+pageInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        navigateFromPageInput();
+        pageInput.blur();
     }
-);
+});
 
 
 /* ======================================================
    PREVIOUS / NEXT
 ====================================================== */
 
-previousPageButton.addEventListener(
-    "click",
-    function () {
-        if (currentPage > 1) {
-            scrollToPage(
-                currentPage - 1
-            );
-        }
+previousPageButton.addEventListener("click", function () {
+    if (currentPage > 1) {
+        goToPage(currentPage - 1);
     }
-);
+});
 
-nextPageButton.addEventListener(
-    "click",
-    function () {
-        if (
-            pdfDocument &&
-            currentPage < pdfDocument.numPages
-        ) {
-            scrollToPage(
-                currentPage + 1
-            );
-        }
+nextPageButton.addEventListener("click", function () {
+    if (pdfDocument && currentPage < pdfDocument.numPages) {
+        goToPage(currentPage + 1);
     }
-);
+});
 
 
 /* ======================================================
@@ -863,9 +640,7 @@ nextPageButton.addEventListener(
 ====================================================== */
 
 async function rebuildAtCurrentZoom() {
-    const targetPage = currentPage;
-
-    await buildContinuousViewer(targetPage);
+    await renderPage(currentPage);
 
     zoomLevelElement.textContent =
         `${Math.round(scale * 100)}%`;
@@ -910,9 +685,29 @@ zoomOutButton.addEventListener(
 );
 
 
-/* ======================================================
-   TEXT HELPERS
-====================================================== */
+/*
+   PDF.js can split one visual sentence into many spans.
+   We therefore keep a lightweight reading-order list, but we
+   NEVER use the entire page as a fallback sentence.
+*/
+/*
+=========================================================
+ ROBUST WORD / SENTENCE RECOGNITION
+=========================================================
+
+PDF.js can represent:
+
+    How
+    are
+    you
+    ?
+
+as four separate spans.
+
+The important fix is that punctuation-only spans are INCLUDED
+when building sentence groups. Only English-containing spans
+remain clickable.
+*/
 
 function normalizeText(text) {
     return String(text || "")
@@ -925,29 +720,151 @@ function containsEnglish(text) {
 }
 
 function isSentenceEnding(text) {
-    return /[.!?]["'”’)\]]*\s*$/.test(text);
+    return /[.!?]["'”’)\]]*\s*$/.test(
+        normalizeText(text)
+    );
 }
 
-/*
-   PDF.js can split one visual sentence into many spans.
-   We therefore keep a lightweight reading-order list, but we
-   NEVER use the entire page as a fallback sentence.
-*/
-function buildSentenceGroups(spans) {
+function getVisualRect(span) {
+    const rect = span.getBoundingClientRect();
+
+    return {
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        centerY: rect.top + rect.height / 2,
+        height: Math.max(rect.height, 1)
+    };
+}
+
+function sortSpansForReadingOrder(spans) {
+    return [...spans].sort((a, b) => {
+        const ar = getVisualRect(a);
+        const br = getVisualRect(b);
+
+        const sameLineTolerance =
+            Math.max(
+                3,
+                Math.min(ar.height, br.height) * 0.65
+            );
+
+        if (
+            Math.abs(ar.centerY - br.centerY) <=
+            sameLineTolerance
+        ) {
+            return ar.left - br.left;
+        }
+
+        return ar.top - br.top;
+    });
+}
+
+function buildSentenceGroups(allSpans) {
+    /*
+       IMPORTANT:
+       We use ALL non-empty spans here.
+
+       Do NOT filter punctuation out.
+       This is what fixes:
+           How + are + you + ?
+    */
+
+    const ordered =
+        sortSpansForReadingOrder(
+            allSpans.filter(
+                span =>
+                    normalizeText(
+                        span.textContent
+                    )
+            )
+        );
+
     const groups = [];
     let current = [];
 
-    spans.forEach(span => {
-        const text = normalizeText(span.textContent);
-        if (!text || !containsEnglish(text)) return;
+    for (let i = 0; i < ordered.length; i++) {
+        const span = ordered[i];
+        const text =
+            normalizeText(
+                span.textContent
+            );
+
+        if (!text) {
+            continue;
+        }
 
         current.push(span);
+
+        /*
+           End the sentence as soon as punctuation arrives.
+
+           This works even when "?" is its own PDF.js span.
+        */
 
         if (isSentenceEnding(text)) {
             groups.push(current);
             current = [];
+            continue;
         }
-    });
+
+        const next = ordered[i + 1];
+
+        if (!next || current.length === 0) {
+            continue;
+        }
+
+        /*
+           Keep wrapped sentences together.
+           Only break on an unusually large vertical gap
+           when the accumulated text already looks sentence-like.
+        */
+
+        const currentRect =
+            getVisualRect(span);
+
+        const nextRect =
+            getVisualRect(next);
+
+        const verticalGap =
+            Math.abs(
+                nextRect.centerY -
+                currentRect.centerY
+            );
+
+        const lineHeight =
+            Math.max(
+                currentRect.height,
+                nextRect.height,
+                10
+            );
+
+        const currentText =
+            normalizeText(
+                current
+                    .map(
+                        s =>
+                            normalizeText(
+                                s.textContent
+                            )
+                    )
+                    .join(" ")
+            );
+
+        const wordCount =
+            currentText
+                ? currentText.split(/\s+/).length
+                : 0;
+
+        if (
+            verticalGap >
+                lineHeight * 2 &&
+            wordCount >= 2
+        ) {
+            groups.push(current);
+            current = [];
+        }
+    }
 
     if (current.length) {
         groups.push(current);
@@ -956,199 +873,419 @@ function buildSentenceGroups(spans) {
     return groups;
 }
 
-function findSentenceForSpan(span, sentenceGroups) {
-    const group = sentenceGroups.find(g => g.includes(span));
-    return group && group.length ? group : [span];
+function createSentenceMap(sentenceGroups) {
+    const map = new Map();
+
+    sentenceGroups.forEach(group => {
+        group.forEach(span => {
+            map.set(span, group);
+        });
+    });
+
+    return map;
 }
 
 function getGroupText(group) {
     return normalizeText(
         group
-            .map(span => normalizeText(span.textContent))
+            .map(
+                span =>
+                    normalizeText(
+                        span.textContent
+                    )
+            )
             .filter(Boolean)
             .join(" ")
     );
 }
 
-/*
-   Find the exact word under the pointer inside a PDF.js span.
-   This prevents a large text span from causing the whole line/page
-   to be spoken when the user only clicked one word.
-*/
-function getWordAtPoint(event, fallbackSpan) {
+function isCompleteSentenceText(text) {
+    const clean =
+        normalizeText(text);
+
+    if (!clean) {
+        return false;
+    }
+
+    const words =
+        clean.split(/\s+/).filter(Boolean);
+
+    return (
+        words.length >= 2 &&
+        isSentenceEnding(clean)
+    );
+}
+
+function findSentenceForSpan(
+    span,
+    sentenceMap
+) {
+    return (
+        sentenceMap.get(span) ||
+        []
+    );
+}
+
+function getWordAtPoint(
+    event,
+    fallbackSpan
+) {
     let range = null;
 
     try {
-        if (document.caretPositionFromPoint) {
-            const position = document.caretPositionFromPoint(
-                event.clientX,
-                event.clientY
-            );
+        if (
+            document.caretPositionFromPoint
+        ) {
+            const position =
+                document.caretPositionFromPoint(
+                    event.clientX,
+                    event.clientY
+                );
 
-            if (position && position.offsetNode) {
-                range = document.createRange();
-                range.setStart(position.offsetNode, position.offset);
-                range.collapse(true);
+            if (
+                position &&
+                position.offsetNode
+            ) {
+                range =
+                    document.createRange();
+
+                range.setStart(
+                    position.offsetNode,
+                    position.offset
+                );
+
+                range.collapse(
+                    true
+                );
             }
-        } else if (document.caretRangeFromPoint) {
-            range = document.caretRangeFromPoint(
-                event.clientX,
-                event.clientY
-            );
+        } else if (
+            document.caretRangeFromPoint
+        ) {
+            range =
+                document.caretRangeFromPoint(
+                    event.clientX,
+                    event.clientY
+                );
         }
-    } catch (error) {
+    } catch {
         range = null;
     }
 
     if (!range) {
-        return normalizeText(fallbackSpan.textContent);
+        return normalizeText(
+            fallbackSpan.textContent
+        );
     }
 
-    const textNode = range.startContainer;
-    if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
-        return normalizeText(fallbackSpan.textContent);
+    const textNode =
+        range.startContainer;
+
+    if (
+        !textNode ||
+        textNode.nodeType !== Node.TEXT_NODE ||
+        !fallbackSpan.contains(
+            textNode
+        )
+    ) {
+        return normalizeText(
+            fallbackSpan.textContent
+        );
     }
 
-    if (!fallbackSpan.contains(textNode)) {
-        return normalizeText(fallbackSpan.textContent);
-    }
+    const fullText =
+        textNode.textContent || "";
 
-    const fullText = textNode.textContent || "";
-    const offset = Math.max(
-        0,
-        Math.min(range.startOffset, fullText.length)
-    );
+    const offset =
+        Math.max(
+            0,
+            Math.min(
+                range.startOffset,
+                fullText.length
+            )
+        );
 
     let start = offset;
     let end = offset;
 
-    while (start > 0 && !/\s/.test(fullText[start - 1])) {
+    while (
+        start > 0 &&
+        !/\s/.test(
+            fullText[start - 1]
+        )
+    ) {
         start--;
     }
 
-    while (end < fullText.length && !/\s/.test(fullText[end])) {
+    while (
+        end < fullText.length &&
+        !/\s/.test(
+            fullText[end]
+        )
+    ) {
         end++;
     }
 
-    const word = normalizeText(fullText.slice(start, end));
+    const word =
+        normalizeText(
+            fullText.slice(
+                start,
+                end
+            )
+        );
 
-    return word || normalizeText(fallbackSpan.textContent);
+    return (
+        word ||
+        normalizeText(
+            fallbackSpan.textContent
+        )
+    );
 }
-
-function getSentenceFromTextPosition(span, sentenceGroups) {
-    return findSentenceForSpan(span, sentenceGroups);
-}
-
-/* ======================================================
-   TEXT INTERACTION
-====================================================== */
 
 function setupTextInteraction(
     textLayer,
     pageContainer,
     pageNumber
 ) {
-    const spans = Array.from(
-        textLayer.querySelectorAll("span")
-    ).filter(span => {
-        const text = normalizeText(span.textContent);
-        return text && containsEnglish(text);
-    });
+    /*
+       ALL spans participate in sentence grouping.
+       This includes punctuation-only spans.
+    */
 
-    if (!spans.length) return;
+    const allSpans =
+        Array.from(
+            textLayer.querySelectorAll(
+                "span"
+            )
+        ).filter(
+            span =>
+                normalizeText(
+                    span.textContent
+                )
+        );
 
-    const sentenceGroups = buildSentenceGroups(spans);
+    if (!allSpans.length) {
+        return;
+    }
 
-    spans.forEach((span, index) => {
-        const text = normalizeText(span.textContent);
+    const sentenceGroups =
+        buildSentenceGroups(
+            allSpans
+        );
 
-        span.classList.add("clickable-text");
-        span.dataset.textIndex = String(index);
-        span.dataset.speechText = text;
-        span.title = "اضغط لسماع النطق — نقرتان للجملة";
+    const sentenceMap =
+        createSentenceMap(
+            sentenceGroups
+        );
 
-        span.addEventListener("click", function (event) {
-            event.preventDefault();
-            event.stopPropagation();
+    /*
+       Only English-containing spans
+       respond to clicks.
+    */
 
-            if (activeMode !== "hand" && activeMode !== "highlighter") {
-                return;
-            }
+    const clickableSpans =
+        allSpans.filter(
+            span =>
+                containsEnglish(
+                    normalizeText(
+                        span.textContent
+                    )
+                )
+        );
+
+    clickableSpans.forEach(
+        function (span) {
+            const spanText =
+                normalizeText(
+                    span.textContent
+                );
+
+            span.classList.add(
+                "clickable-text"
+            );
+
+            span.dataset.speechText =
+                spanText;
+
+            span.title =
+                "اضغط لسماع النطق";
 
             /*
-               Wait briefly so a double-click does not trigger both
-               word and sentence actions.
+               SINGLE CLICK
+
+               If the clicked span belongs to a complete
+               sentence, read the complete sentence.
+
+               Otherwise read only the exact word.
             */
-            if (pageContainer._speechClickTimer) {
-                clearTimeout(pageContainer._speechClickTimer);
-            }
 
-            pageContainer._speechClickTimer = setTimeout(() => {
-                pageContainer._speechClickTimer = null;
+            span.addEventListener(
+                "click",
+                function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
 
-                const word = getWordAtPoint(event, span);
-                const target = word || text;
+                    if (
+                        activeMode !==
+                        "hand"
+                    ) {
+                        return;
+                    }
 
-                if (activeMode === "hand") {
-                    handlePronunciation(
-                        pageContainer,
-                        [span],
-                        pageNumber,
-                        target
-                    );
-                } else {
-                    createPersistentHighlight(
-                        pageContainer,
-                        [span],
-                        pageNumber,
-                        target
-                    );
+                    if (
+                        pageContainer._speechClickTimer
+                    ) {
+                        clearTimeout(
+                            pageContainer
+                                ._speechClickTimer
+                        );
+                    }
+
+                    pageContainer
+                        ._speechClickTimer =
+                        setTimeout(
+                            function () {
+                                pageContainer
+                                    ._speechClickTimer =
+                                    null;
+
+                                const sentence =
+                                    findSentenceForSpan(
+                                        span,
+                                        sentenceMap
+                                    );
+
+                                const sentenceText =
+                                    getGroupText(
+                                        sentence
+                                    );
+
+                                /*
+                                   Example:
+                                       How
+                                       are
+                                       you
+                                       ?
+
+                                   sentenceText becomes:
+                                       How are you ?
+                                */
+
+                                if (
+                                    sentence.length >= 2 &&
+                                    isCompleteSentenceText(
+                                        sentenceText
+                                    )
+                                ) {
+                                    handlePronunciation(
+                                        pageContainer,
+                                        sentence,
+                                        pageNumber,
+                                        sentenceText
+                                    );
+
+                                    return;
+                                }
+
+                                /*
+                                   A sentence may be inside a
+                                   single PDF.js span.
+                                */
+
+                                if (
+                                    isCompleteSentenceText(
+                                        spanText
+                                    )
+                                ) {
+                                    handlePronunciation(
+                                        pageContainer,
+                                        [span],
+                                        pageNumber,
+                                        spanText
+                                    );
+
+                                    return;
+                                }
+
+                                /*
+                                   Not a complete sentence:
+                                   read only the clicked word.
+                                */
+
+                                const word =
+                                    getWordAtPoint(
+                                        event,
+                                        span
+                                    );
+
+                                handlePronunciation(
+                                    pageContainer,
+                                    [span],
+                                    pageNumber,
+                                    word
+                                );
+                            },
+                            180
+                        );
                 }
-            }, 180);
-        });
-
-        span.addEventListener("dblclick", function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-
-            if (pageContainer._speechClickTimer) {
-                clearTimeout(pageContainer._speechClickTimer);
-                pageContainer._speechClickTimer = null;
-            }
-
-            if (activeMode !== "hand" && activeMode !== "highlighter") {
-                return;
-            }
-
-            const sentence = getSentenceFromTextPosition(
-                span,
-                sentenceGroups
             );
 
             /*
-               Safety guard: never allow a fallback that spans an
-               abnormally large portion of the page.
+               DOUBLE CLICK
+               Always read the complete detected sentence.
             */
-            const safeSentence =
-                sentence.length > 80 ? [span] : sentence;
 
-            if (activeMode === "hand") {
-                handlePronunciation(
-                    pageContainer,
-                    safeSentence,
-                    pageNumber,
-                    getGroupText(safeSentence)
-                );
-            } else {
-                createPersistentHighlight(
-                    pageContainer,
-                    safeSentence,
-                    pageNumber,
-                    getGroupText(safeSentence)
-                );
-            }
-        });
-    });
+            span.addEventListener(
+                "dblclick",
+                function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (
+                        pageContainer._speechClickTimer
+                    ) {
+                        clearTimeout(
+                            pageContainer
+                                ._speechClickTimer
+                        );
+
+                        pageContainer
+                            ._speechClickTimer =
+                            null;
+                    }
+
+                    if (
+                        activeMode !==
+                        "hand"
+                    ) {
+                        return;
+                    }
+
+                    const sentence =
+                        findSentenceForSpan(
+                            span,
+                            sentenceMap
+                        );
+
+                    const sentenceText =
+                        getGroupText(
+                            sentence
+                        );
+
+                    if (
+                        sentence.length &&
+                        sentenceText
+                    ) {
+                        handlePronunciation(
+                            pageContainer,
+                            sentence,
+                            pageNumber,
+                            sentenceText
+                        );
+                    }
+                }
+            );
+        }
+    );
 }
 
 /* ======================================================
@@ -1163,17 +1300,37 @@ function handlePronunciation(
 ) {
     clearTemporarySpeechHighlight();
 
-    const spans = Array.isArray(selectedSpans) ? selectedSpans : [];
-    if (!spans.length) return;
+    const spans =
+        Array.isArray(
+            selectedSpans
+        )
+            ? selectedSpans
+            : [];
 
-    currentSpeechSentence = spans;
-    currentSpeechPageContainer = pageContainer;
+    if (!spans.length) {
+        return;
+    }
 
-    spans.forEach(span => {
-        span.classList.add("speech-highlight");
-    });
+    currentSpeechSentence =
+        spans;
 
-    const text = normalizeText(explicitText) || getGroupText(spans);
+    currentSpeechPageContainer =
+        pageContainer;
+
+    spans.forEach(
+        span =>
+            span.classList.add(
+                "speech-highlight"
+            )
+    );
+
+    const text =
+        normalizeText(
+            explicitText
+        ) ||
+        getGroupText(
+            spans
+        );
 
     if (!text) {
         clearTemporarySpeechHighlight();
@@ -1182,98 +1339,229 @@ function handlePronunciation(
 
     speak(
         text,
-        () => clearTemporarySpeechHighlight(),
+        () =>
+            clearTemporarySpeechHighlight(),
         pageNumber
     );
 }
 
 function clearTemporarySpeechHighlight() {
-    currentSpeechSentence.forEach(span => {
-        span.classList.remove("speech-highlight");
-    });
+    currentSpeechSentence.forEach(
+        span =>
+            span.classList.remove(
+                "speech-highlight"
+            )
+    );
 
     currentSpeechSentence = [];
     currentSpeechPageContainer = null;
 }
 
 /* ======================================================
-   SPEECH SYNTHESIS
+   SPEECH SYNTHESIS — USER'S PROVEN VOICE CODE
 ====================================================== */
 
-function speak(text, onComplete, pageNumber) {
-    if (!("speechSynthesis" in window)) {
+function speak(
+    text,
+    onComplete = null
+) {
+
+    if (
+        !("speechSynthesis" in window)
+    ) {
+
         pronunciationStatus.textContent =
             "النطق غير مدعوم في هذا المتصفح.";
-        onComplete?.();
+
+        if (typeof onComplete === "function") {
+            onComplete();
+        }
+
         return;
+
     }
 
-    const cleanText = normalizeText(text);
 
-    if (!cleanText) {
-        onComplete?.();
+    text =
+        normalizeText(
+            text
+        );
+
+
+    if (!text) {
+
+        if (typeof onComplete === "function") {
+            onComplete();
+        }
+
         return;
+
     }
+
+
+    /*
+       إيقاف النطق السابق.
+    */
 
     speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
 
-    const availableVoices = speechSynthesis.getVoices();
-    const samantha = availableVoices.find(voice =>
-        voice.name.toLowerCase().includes("samantha")
+    /*
+       إنشاء النطق.
+    */
+
+    const utterance =
+        new SpeechSynthesisUtterance(
+            text
+        );
+
+
+   /*
+   الصوت.
+
+   إذا كان صوت Samantha متوفراً،
+   استخدمه تلقائياً.
+
+   إذا لم يكن متوفراً،
+   استخدم الصوت الذي اختاره المستخدم.
+*/
+
+const voices =
+    speechSynthesis.getVoices();
+
+const samantha =
+    voices.find(
+        voice =>
+            voice.name
+                .toLowerCase()
+                .includes("samantha")
     );
 
-    if (samantha) {
-        utterance.voice = samantha;
-        utterance.lang = samantha.lang;
-    } else if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        utterance.lang = selectedVoice.lang;
-    } else {
-        utterance.lang = "en-US";
-    }
+if (samantha) {
 
-    utterance.rate = speechRate;
-    utterance.pitch = 1;
+    utterance.voice =
+        samantha;
 
-    let completed = false;
-    const finish = () => {
-        if (completed) return;
-        completed = true;
-        onComplete?.();
-    };
+    utterance.lang =
+        samantha.lang;
 
-    utterance.onstart = function () {
-        pronunciationStatus.textContent = `🔊 ${cleanText}`;
-    };
-
-    utterance.onend = function () {
-        pronunciationStatus.textContent =
-            "🖐️ اضغط على أي كلمة إنجليزية لسماع النطق";
-        finish();
-    };
-
-    utterance.onerror = function (error) {
-        console.error("Speech error:", error);
-        pronunciationStatus.textContent = "تعذر تشغيل النطق.";
-        finish();
-    };
-
-    speechSynthesis.speak(utterance);
 }
+
+else if (selectedVoice) {
+
+    utterance.voice =
+        selectedVoice;
+
+    utterance.lang =
+        selectedVoice.lang;
+
+}
+
+else {
+
+    utterance.lang =
+        "en-US";
+
+}
+
+
+    /*
+       السرعة.
+    */
+
+    utterance.rate =
+        speechRate;
+
+
+    /*
+       Pitch.
+    */
+
+    utterance.pitch =
+        1;
+
+
+    /*
+       بداية النطق.
+    */
+
+    utterance.onstart =
+        function () {
+
+            pronunciationStatus.textContent =
+                `🔊 ${text}`;
+
+        };
+
+
+    /*
+       نهاية النطق.
+    */
+
+    utterance.onend =
+        function () {
+
+            pronunciationStatus.textContent =
+                "🔊 اضغط على النص الإنجليزي لسماع النطق";
+
+            if (typeof onComplete === "function") {
+                onComplete();
+            }
+
+        };
+
+
+    /*
+       الخطأ.
+    */
+
+    utterance.onerror =
+        function (error) {
+
+            console.error(
+                "Speech error:",
+                error
+            );
+
+            pronunciationStatus.textContent =
+                "تعذر تشغيل النطق.";
+
+            if (typeof onComplete === "function") {
+                onComplete();
+            }
+
+        };
+
+
+    speechSynthesis.speak(
+        utterance
+    );
+
+}
+
 
 /* ======================================================
    VOICES
 ====================================================== */
 
 function loadVoices() {
-    if (!("speechSynthesis" in window)) {
+
+    if (
+        !("speechSynthesis" in window)
+    ) {
+
         return;
+
     }
+
 
     voices =
         speechSynthesis.getVoices();
+
+
+    /*
+       الإنجليزية فقط.
+    */
 
     const englishVoices =
         voices.filter(
@@ -1284,31 +1572,56 @@ function loadVoices() {
                     .startsWith("en")
         );
 
-    if (englishVoices.length === 0) {
+
+    if (
+        englishVoices.length === 0
+    ) {
+
         return;
+
     }
+
 
     voiceSelect.innerHTML = "";
 
-    englishVoices.forEach(voice => {
-        const option =
-            document.createElement("option");
 
-        option.value =
-            `${voice.name}|${voice.lang}`;
+    englishVoices.forEach(
+        function (voice) {
 
-        option.textContent =
-            `${voice.name} — ${voice.lang}`;
+            const option =
+                document.createElement(
+                    "option"
+                );
 
-        voiceSelect.appendChild(option);
-    });
+
+            option.value =
+                `${voice.name}|${voice.lang}`;
+
+
+            option.textContent =
+                `${voice.name} — ${voice.lang}`;
+
+
+            voiceSelect.appendChild(
+                option
+            );
+
+        }
+    );
+
+
+    /*
+       استعادة الصوت.
+    */
 
     const savedVoice =
         localStorage.getItem(
             "pdfReaderVoice"
         );
 
+
     if (savedVoice) {
+
         const saved =
             englishVoices.find(
                 voice =>
@@ -1316,32 +1629,47 @@ function loadVoices() {
                     savedVoice
             );
 
+
         if (saved) {
-            selectedVoice = saved;
-            voiceSelect.value = savedVoice;
+
+            selectedVoice =
+                saved;
+
+            voiceSelect.value =
+                savedVoice;
+
             return;
+
         }
+
     }
 
-    const samantha =
-        englishVoices.find(
-            voice =>
-                voice.name
-                    .toLowerCase()
-                    .includes("samantha")
-        );
+
+    /*
+       اختيار أول صوت.
+    */
 
     selectedVoice =
-        samantha || englishVoices[0];
+        englishVoices[0];
+
 
     voiceSelect.value =
         `${selectedVoice.name}|${selectedVoice.lang}`;
+
 }
+
+
+/* ======================================================
+   تغيير الصوت
+====================================================== */
 
 voiceSelect.addEventListener(
     "change",
     function () {
-        const value = this.value;
+
+        const value =
+            this.value;
+
 
         selectedVoice =
             voices.find(
@@ -1350,22 +1678,16 @@ voiceSelect.addEventListener(
                     value
             );
 
+
         if (selectedVoice) {
+
             localStorage.setItem(
                 "pdfReaderVoice",
                 value
             );
-        }
-    }
-);
 
-testVoiceButton.addEventListener(
-    "click",
-    function () {
-        speak(
-            "Hello! This is a pronunciation test.",
-            null
-        );
+        }
+
     }
 );
 
@@ -1375,51 +1697,94 @@ testVoiceButton.addEventListener(
 ====================================================== */
 
 function updateSpeed() {
+
     speedValue.textContent =
         `${speechRate.toFixed(2)}×`;
+
 }
+
 
 speedRange.addEventListener(
     "input",
     function () {
+
         speechRate =
             parseFloat(
                 this.value
             );
 
+
         updateSpeed();
+
 
         localStorage.setItem(
             "pdfReaderSpeechRate",
-            String(speechRate)
+            speechRate
         );
+
     }
 );
 
+
+/* ======================================================
+   اختبار الصوت
+====================================================== */
+
+testVoiceButton.addEventListener(
+    "click",
+    function () {
+
+        speak(
+            "Hello! This is a pronunciation test."
+        );
+
+    }
+);
+
+
+/* ======================================================
+   استعادة إعدادات السرعة
+====================================================== */
+
 function loadSpeechSettings() {
+
     const savedRate =
         localStorage.getItem(
             "pdfReaderSpeechRate"
         );
 
+
     if (savedRate) {
+
         const parsed =
-            parseFloat(savedRate);
+            parseFloat(
+                savedRate
+            );
+
 
         if (
             !Number.isNaN(parsed) &&
             parsed >= 0.5 &&
             parsed <= 1.5
         ) {
-            speechRate = parsed;
+
+            speechRate =
+                parsed;
+
         }
+
     }
 
+
     speedRange.value =
-        String(speechRate);
+        speechRate;
+
 
     updateSpeed();
+
 }
+
+
 
 
 /* ======================================================
@@ -1429,7 +1794,6 @@ function loadSpeechSettings() {
 const modeButtons = [
     handTool,
     penTool,
-    highlighterTool,
     eraserTool
 ];
 
@@ -1443,97 +1807,37 @@ function setActiveMode(mode) {
     const activeButton = {
         hand: handTool,
         pen: penTool,
-        highlighter: highlighterTool,
         eraser: eraserTool
     }[mode];
 
     activeButton?.classList.add("active");
 
-    document.body.dataset.readerMode =
-        mode;
+    document.body.dataset.readerMode = mode;
 
     document.querySelectorAll(".pdf-page")
         .forEach(applyModeToPage);
 }
 
 function applyModeToPage(pageContainer) {
-    const textLayer =
-        pageContainer.querySelector(
-            ".textLayer"
-        );
+    const textLayer = pageContainer.querySelector(".textLayer");
+    const annotationCanvas = pageContainer.querySelector(".annotation-canvas");
 
-    const annotationCanvas =
-        pageContainer.querySelector(
-            ".annotation-canvas"
-        );
+    if (!textLayer || !annotationCanvas) return;
 
-    if (!textLayer || !annotationCanvas) {
-        return;
-    }
+    const isHand = activeMode === "hand";
 
-    /*
-       Hand + Highlighter:
-       النص يتلقى الضغط.
-    */
-
-    if (
-        activeMode === "hand" ||
-        activeMode === "highlighter"
-    ) {
-        textLayer.style.pointerEvents =
-            "auto";
-
-        annotationCanvas.style.pointerEvents =
-            "none";
-
-    } else {
-        /*
-           Pen + Eraser:
-           لوحة الرسم تتلقى الضغط.
-        */
-
-        textLayer.style.pointerEvents =
-            "none";
-
-        annotationCanvas.style.pointerEvents =
-            "auto";
-    }
+    textLayer.style.pointerEvents = isHand ? "auto" : "none";
+    annotationCanvas.style.pointerEvents = isHand ? "none" : "auto";
 
     annotationCanvas.style.cursor =
-        activeMode === "pen"
-            ? "crosshair"
-            : activeMode === "eraser"
-                ? "cell"
-                : "default";
+        activeMode === "pen" ? "crosshair" :
+        activeMode === "eraser" ? "cell" :
+        "default";
 }
 
-handTool.addEventListener(
-    "click",
-    () => setActiveMode("hand")
-);
-
-penTool.addEventListener(
-    "click",
-    () => setActiveMode("pen")
-);
-
-highlighterTool.addEventListener(
-    "click",
-    () => setActiveMode("highlighter")
-);
-
-eraserTool.addEventListener(
-    "click",
-    () => setActiveMode("eraser")
-);
-
-penThickness.addEventListener(
-    "input",
-    function () {
-        thicknessValue.textContent =
-            this.value;
-    }
-);
+handTool.addEventListener("click", () => setActiveMode("hand"));
+penTool.addEventListener("click", () => setActiveMode("pen"));
+eraserTool.addEventListener("click", () => setActiveMode("eraser"));
 
 
 /* ======================================================
@@ -1575,9 +1879,7 @@ function setupAnnotationCanvas(
                 activeDrawing = {
                     pageNumber,
                     points: [point],
-                    width: Number(
-                        penThickness.value
-                    )
+                    width: 4
                 };
 
                 redrawAnnotations(
@@ -1986,7 +2288,7 @@ function drawStrokeOnContext(
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#dc2626";
     ctx.lineWidth =
-        Number(stroke.width || 5);
+        Number(stroke.width || 4);
 
     ctx.beginPath();
 
@@ -2256,7 +2558,7 @@ document.addEventListener(
 
         if (event.key === "ArrowLeft") {
             if (pdfDocument) {
-                scrollToPage(
+                goToPage(
                     currentPage + 1
                 );
             }
@@ -2264,7 +2566,7 @@ document.addEventListener(
 
         if (event.key === "ArrowRight") {
             if (pdfDocument) {
-                scrollToPage(
+                goToPage(
                     currentPage - 1
                 );
             }
@@ -2298,7 +2600,7 @@ window.addEventListener(
                     pdfDocument &&
                     readerApp.hidden === false
                 ) {
-                    buildContinuousViewer(
+                    renderPage(
                         currentPage
                     );
                 }
