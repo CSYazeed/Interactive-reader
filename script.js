@@ -80,8 +80,17 @@ const penTool = document.getElementById("penTool");
 const eraserTool = document.getElementById("eraserTool");
 
 
-const pronunciationModal = document.getElementById("pronunciationModal");
-const understoodButton = document.getElementById("understoodButton");
+const pronunciationModal =
+    document.getElementById("pronunciationModal");
+
+const understoodButton =
+    document.getElementById("understoodButton");
+
+
+const contentLoadingOverlay =
+    document.getElementById(
+        "contentLoadingOverlay"
+    );
 
 
 /* ======================================================
@@ -331,13 +340,47 @@ function getPageAnnotations(pageNumber) {
 
 
 /* ======================================================
+   CONTENT LOADING OVERLAY
+====================================================== */
+
+function showContentLoading() {
+
+    if (
+        !contentLoadingOverlay
+    ) {
+        return;
+    }
+
+    contentLoadingOverlay.hidden =
+        false;
+}
+
+
+function hideContentLoading() {
+
+    if (
+        !contentLoadingOverlay
+    ) {
+        return;
+    }
+
+    contentLoadingOverlay.hidden =
+        true;
+}
+
+
+/* ======================================================
    PDF LOAD
 ====================================================== */
 
 async function openPDF(pdfPath) {
+
+    showContentLoading();
+
     try {
+
         statusMessage.textContent =
-            "جارٍ تحميل الملف...";
+            "جارٍ تحميل المحتوى";
 
         window.speechSynthesis?.cancel();
         clearTemporarySpeechHighlight();
@@ -366,26 +409,37 @@ async function openPDF(pdfPath) {
         scale = 1;
         zoomLevelElement.textContent = "100%";
 
-        await renderPage(currentPage);
+        await renderPage(
+    currentPage
+);
 
-        statusMessage.textContent =
-            "تم تحميل الملف بنجاح";
+statusMessage.textContent =
+    "تم تحميل الملف بنجاح";
 
-        updateNavigation();
-        maybeShowPronunciationNotice();
+updateNavigation();
+
+hideContentLoading();
+
+maybeShowPronunciationNotice();
 
     } catch (error) {
-        console.error("خطأ في تحميل PDF:", error);
 
-        statusMessage.textContent =
-            "تعذر تحميل الملف";
+    console.error(
+        "خطأ في تحميل PDF:",
+        error
+    );
 
-        pdfViewer.innerHTML = `
-            <div class="pdf-error">
-                تعذر فتح الملف. تأكد من مسار ملف PDF.
-            </div>
-        `;
-    }
+    statusMessage.textContent =
+        "تعذر تحميل الملف";
+
+    hideContentLoading();
+
+    pdfViewer.innerHTML = `
+        <div class="pdf-error">
+            تعذر فتح الملف. تأكد من مسار ملف PDF.
+        </div>
+    `;
+}
 }
 
 

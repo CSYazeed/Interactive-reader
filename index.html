@@ -331,13 +331,49 @@
         </div>
 
 
-        <!-- عارض PDF -->
+        <!-- =====================================================
+     عارض PDF
+====================================================== -->
 
-        <main class="viewer-container" id="viewerContainer">
+<main class="viewer-container" id="viewerContainer">
 
-            <div id="pdfViewer" class="pdf-viewer"></div>
+    <div id="pdfViewer" class="pdf-viewer"></div>
 
-        </main>
+
+    <!-- =================================================
+         شاشة تحميل المحتوى
+    ================================================== -->
+
+    <div
+        id="contentLoadingOverlay"
+        class="content-loading-overlay"
+        hidden
+        role="status"
+        aria-live="polite"
+        aria-label="جارٍ تحميل المحتوى"
+    >
+
+        <div class="content-loading-card">
+
+            <div class="content-loading-icon">
+                📖
+            </div>
+
+            <div class="content-loading-spinner"></div>
+
+            <h2>
+                جارٍ تحميل المحتوى
+            </h2>
+
+            <p>
+                يرجى الانتظار
+            </p>
+
+        </div>
+
+    </div>
+
+</main>
 
 
         <!-- شريط الحالة -->
