@@ -470,9 +470,19 @@ async function renderPage(pageNumber) {
         }
 
         const viewport = page.getViewport({ scale });
-        const outputScale = window.devicePixelRatio || 1;
+const outputScale = window.devicePixelRatio || 1;
 
-        pdfViewer.innerHTML = "";
+/*
+   احفظ موضع التمرير قبل إعادة بناء الصفحة.
+   هذا مهم جدًا على iPhone / Safari.
+*/
+const savedScrollTop =
+    viewerContainer.scrollTop;
+
+const savedScrollLeft =
+    viewerContainer.scrollLeft;
+
+pdfViewer.innerHTML = "";
 
         const pageContainer = document.createElement("div");
         pageContainer.className = "pdf-page";
@@ -537,6 +547,29 @@ async function renderPage(pageNumber) {
         pageContainer.appendChild(textLayerDiv);
         pageContainer.appendChild(annotationCanvas);
         pdfViewer.appendChild(pageContainer);
+
+/*
+   Safari / iOS قد يعيد حساب layout بعد إضافة
+   TextLayer وCanvas.
+
+   لذلك نستعيد موضع التمرير مرة أخرى بعد
+   انتهاء دورة layout الحالية.
+*/
+viewerContainer.scrollTop =
+    savedScrollTop;
+
+viewerContainer.scrollLeft =
+    savedScrollLeft;
+
+requestAnimationFrame(() => {
+
+    viewerContainer.scrollTop =
+        savedScrollTop;
+
+    viewerContainer.scrollLeft =
+        savedScrollLeft;
+
+});
 
         setupTextInteraction(
             textLayerDiv,
@@ -616,27 +649,97 @@ function updateNavigation() {
     nextPageButton.disabled = currentPage >= pdfDocument.numPages;
 }
 
-async function goToPage(pageNumber) {
+async function goToPage(
+    pageNumber
+) {
+
     if (!pdfDocument) {
         return;
     }
 
-    const target = Math.max(
-        1,
-        Math.min(
-            Number(pageNumber) || 1,
-            pdfDocument.numPages
-        )
-    );
 
-    if (target === currentPage && pdfViewer.querySelector('.pdf-page')) {
-        pageInput.value = String(target);
+    const target =
+        Math.max(
+            1,
+            Math.min(
+                Number(pageNumber) || 1,
+                pdfDocument.numPages
+            )
+        );
+
+
+    if (
+        target === currentPage &&
+        pdfViewer.querySelector(
+            ".pdf-page"
+        )
+    ) {
+
+        pageInput.value =
+            String(target);
+
         updateNavigation();
+
         return;
     }
 
-    setCurrentPage(target);
-    await renderPage(target);
+
+    /*
+       Stop any currently running speech.
+    */
+
+    if (
+        "speechSynthesis" in window
+    ) {
+
+        speechSynthesis.cancel();
+    }
+
+
+    /*
+       Clear temporary speech highlight.
+    */
+
+    clearTemporarySpeechHighlight();
+
+
+    /*
+       Change the logical page first.
+    */
+
+    setCurrentPage(
+        target
+    );
+
+
+    /*
+       Move the viewer to the top of the NEW PDF page.
+
+       This is intentional only when changing pages,
+       not while normal scrolling.
+    */
+
+    viewerContainer.scrollTop = 0;
+
+
+    await renderPage(
+        target
+    );
+
+
+    /*
+       Make sure iOS Safari ends at the top of
+       the newly selected page.
+    */
+
+    requestAnimationFrame(
+        function () {
+
+            viewerContainer.scrollTop =
+                0;
+
+        }
+    );
 }
 
 
@@ -2719,26 +2822,108 @@ document.addEventListener(
 
 /* ======================================================
    RESIZE
+   iOS / Safari safe
 ====================================================== */
 
 let resizeTimer = null;
 
+let lastViewportWidth =
+    window.innerWidth;
+
+
 window.addEventListener(
     "resize",
     function () {
-        clearTimeout(resizeTimer);
+
+        /*
+           Safari iPhone can fire resize while the
+           browser toolbar expands/collapses during
+           normal scrolling.
+
+           We only re-render when the WIDTH actually
+           changes, because width changes normally
+           indicate an orientation/device layout change.
+
+           A height-only change should NOT rebuild
+           the PDF page.
+        */
+
+        const currentWidth =
+            window.innerWidth;
+
+
+        if (
+            currentWidth ===
+            lastViewportWidth
+        ) {
+
+            return;
+        }
+
+
+        lastViewportWidth =
+            currentWidth;
+
+
+        clearTimeout(
+            resizeTimer
+        );
+
 
         resizeTimer =
-            setTimeout(() => {
-                if (
-                    pdfDocument &&
-                    readerApp.hidden === false
-                ) {
-                    renderPage(
-                        currentPage
-                    );
-                }
-            }, 250);
+            setTimeout(
+                function () {
+
+                    if (
+                        pdfDocument &&
+                        readerApp.hidden ===
+                            false
+                    ) {
+
+                        /*
+                           Save scroll position.
+                        */
+
+                        const savedScrollTop =
+                            viewerContainer.scrollTop;
+
+                        const savedScrollLeft =
+                            viewerContainer.scrollLeft;
+
+
+                        renderPage(
+                            currentPage
+                        ).then(
+                            function () {
+
+                                /*
+                                   Restore position after
+                                   the new page is rendered.
+                                */
+
+                                viewerContainer.scrollTop =
+                                    savedScrollTop;
+
+                                viewerContainer.scrollLeft =
+                                    savedScrollLeft;
+
+                                requestAnimationFrame(
+                                    function () {
+
+                                        viewerContainer.scrollTop =
+                                            savedScrollTop;
+
+                                        viewerContainer.scrollLeft =
+                                            savedScrollLeft;
+                                    }
+                                );
+                            }
+                        );
+                    }
+
+                },
+                250
+            );
     }
 );
 
