@@ -1501,6 +1501,34 @@ else {
 
 
     /*
+       حل مشكلة توقف محرك النطق في iOS Safari.
+
+       أحياناً يقوم iOS بإيقاف محرك النطق مؤقتاً
+       (paused) دون سبب ظاهر، فيتوقف الصوت في
+       المنتصف أو لا يبدأ إطلاقاً. استدعاء resume()
+       بشكل متكرر أثناء النطق يمنع هذا التجمد.
+    */
+
+    if (window._speechResumeInterval) {
+        clearInterval(window._speechResumeInterval);
+        window._speechResumeInterval = null;
+    }
+
+    window._speechResumeInterval =
+        setInterval(
+            function () {
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.resume();
+                } else {
+                    clearInterval(window._speechResumeInterval);
+                    window._speechResumeInterval = null;
+                }
+            },
+            250
+        );
+
+
+    /*
        السرعة.
     */
 
@@ -1536,6 +1564,11 @@ else {
     utterance.onend =
         function () {
 
+            if (window._speechResumeInterval) {
+                clearInterval(window._speechResumeInterval);
+                window._speechResumeInterval = null;
+            }
+
             pronunciationStatus.textContent =
                 "🔊 اضغط على النص الإنجليزي لسماع النطق";
 
@@ -1553,6 +1586,11 @@ else {
     utterance.onerror =
         function (error) {
 
+            if (window._speechResumeInterval) {
+                clearInterval(window._speechResumeInterval);
+                window._speechResumeInterval = null;
+            }
+
             console.error(
                 "Speech error:",
                 error
@@ -1569,19 +1607,14 @@ else {
 
 
     /*
-       تأخير بسيط لأن iOS Safari قد يتجاهل
-       speak() إذا استُدعي مباشرة بعد cancel().
+       يجب استدعاء speak() مباشرة وبدون تأخير
+       داخل معالج الحدث (click)، لأن iOS Safari
+       يرفض النطق بصمت إذا لم يكن الاستدعاء
+       جزءاً مباشراً من تفاعل المستخدم.
     */
 
-    setTimeout(
-        function () {
-
-            speechSynthesis.speak(
-                utterance
-            );
-
-        },
-        50
+    speechSynthesis.speak(
+        utterance
     );
 
 }
