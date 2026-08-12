@@ -2,37 +2,26 @@
 =========================================================
  YAZEED ENGLISH — القارئ التفاعلي
  PDF.js 4.10.38
-=========================================================
 
- النظام:
-
+ الوظائف:
  1. تسجيل الدخول برمز من 6 أرقام
- 2. كل رمز يفتح ملف PDF محدد
- 3. الموافقة على سياسة الاستخدام
- 4. تحميل PDF من مجلد pdfs
- 5. PDF.js Canvas
- 6. PDF.js Native TextLayer
- 7. الضغط على النص الإنجليزي للنطق
- 8. اختيار الصوت
- 9. التحكم بسرعة النطق
- 10. التكبير والتصغير
- 11. التنقل بين الصفحات
-
+ 2. سياسة الاستخدام
+ 3. PDF.js — عرض مستمر للصفحات
+ 4. تنقل بالصفحة + مزامنة مع التمرير
+ 5. تكبير وتصغير
+ 6. 🖐️ النطق + تمييز مؤقت للجملة
+ 7. ✏️ قلم أحمر مع سُمك قابل للتعديل
+ 8. 🖍️ محدد أصفر للنص
+ 9. 🧽 ممحاة كاملة للخطوط والتحديدات
+ 10. حفظ التحديدات والرسومات بعد إغلاق المتصفح
+ 11. حفظ منفصل لكل PDF / رمز وصول
+ 12. إشعار أول استخدام
+ 13. روابط التقييم والدعم الفني
 =========================================================
 */
-
-
-/* ======================================================
-   PDF.JS
-====================================================== */
 
 import * as pdfjsLib from
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
-
-
-/*
-   PDF.js Worker
-*/
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
@@ -40,126 +29,63 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 /* ======================================================
    رموز الدخول وملفات PDF
-======================================================
-
-   عدّل هذه القائمة فقط.
-
-   مثال:
-
-   "123456": "pdfs/grammar.pdf"
-
 ====================================================== */
 
 const ACCESS_CODES = {
-
     "111111": "pdfs/grammar1.pdf",
-
     "222222": "pdfs/grammar2.pdf",
-
     "581293": "pdfs/grammar3.pdf",
-
     "726904": "pdfs/grammar4.pdf",
-
     "915438": "pdfs/grammar5.pdf"
-
 };
 
 
 /* ======================================================
-   عناصر تسجيل الدخول
+   عناصر الواجهة
 ====================================================== */
 
-const loginScreen =
-    document.getElementById("loginScreen");
+const loginScreen = document.getElementById("loginScreen");
+const loginForm = document.getElementById("loginForm");
+const accessCodeInput = document.getElementById("accessCode");
+const loginError = document.getElementById("loginError");
 
-const loginForm =
-    document.getElementById("loginForm");
+const policyScreen = document.getElementById("policyScreen");
+const policyAgreement = document.getElementById("policyAgreement");
+const continueButton = document.getElementById("continueButton");
+const policyError = document.getElementById("policyError");
 
-const accessCodeInput =
-    document.getElementById("accessCode");
+const readerApp = document.getElementById("readerApp");
 
-const loginError =
-    document.getElementById("loginError");
+const viewerContainer = document.getElementById("viewerContainer");
+const pdfViewer = document.getElementById("pdfViewer");
+const pageInput = document.getElementById("pageInput");
+const totalPagesElement = document.getElementById("totalPages");
 
+const previousPageButton = document.getElementById("previousPage");
+const nextPageButton = document.getElementById("nextPage");
 
-/* ======================================================
-   عناصر سياسة الاستخدام
-====================================================== */
+const zoomOutButton = document.getElementById("zoomOut");
+const zoomInButton = document.getElementById("zoomIn");
+const zoomLevelElement = document.getElementById("zoomLevel");
 
-const policyScreen =
-    document.getElementById("policyScreen");
+const statusMessage = document.getElementById("statusMessage");
+const pronunciationStatus = document.getElementById("pronunciationStatus");
 
-const policyAgreement =
-    document.getElementById("policyAgreement");
+const voiceSelect = document.getElementById("voiceSelect");
+const testVoiceButton = document.getElementById("testVoiceButton");
+const speedRange = document.getElementById("speedRange");
+const speedValue = document.getElementById("speedValue");
 
-const continueButton =
-    document.getElementById("continueButton");
+const handTool = document.getElementById("handTool");
+const penTool = document.getElementById("penTool");
+const highlighterTool = document.getElementById("highlighterTool");
+const eraserTool = document.getElementById("eraserTool");
 
-const policyError =
-    document.getElementById("policyError");
+const penThickness = document.getElementById("penThickness");
+const thicknessValue = document.getElementById("thicknessValue");
 
-
-/* ======================================================
-   التطبيق
-====================================================== */
-
-const readerApp =
-    document.getElementById("readerApp");
-
-
-/* ======================================================
-   عناصر PDF
-====================================================== */
-
-const pdfViewer =
-    document.getElementById("pdfViewer");
-
-const currentPageElement =
-    document.getElementById("currentPage");
-
-    const pageInput =
-    document.getElementById("pageInput");
-
-const totalPagesElement =
-    document.getElementById("totalPages");
-
-const previousPageButton =
-    document.getElementById("previousPage");
-
-const nextPageButton =
-    document.getElementById("nextPage");
-
-const zoomOutButton =
-    document.getElementById("zoomOut");
-
-const zoomInButton =
-    document.getElementById("zoomIn");
-
-const zoomLevelElement =
-    document.getElementById("zoomLevel");
-
-const statusMessage =
-    document.getElementById("statusMessage");
-
-const pronunciationStatus =
-    document.getElementById("pronunciationStatus");
-
-
-/* ======================================================
-   عناصر الصوت
-====================================================== */
-
-const voiceSelect =
-    document.getElementById("voiceSelect");
-
-const testVoiceButton =
-    document.getElementById("testVoiceButton");
-
-const speedRange =
-    document.getElementById("speedRange");
-
-const speedValue =
-    document.getElementById("speedValue");
+const pronunciationModal = document.getElementById("pronunciationModal");
+const understoodButton = document.getElementById("understoodButton");
 
 
 /* ======================================================
@@ -167,74 +93,53 @@ const speedValue =
 ====================================================== */
 
 let pdfDocument = null;
-
 let currentPage = 1;
-
 let scale = 1;
 
 let voices = [];
-
 let selectedVoice = null;
-
 let speechRate = 0.85;
 
 let authorizedPdfPath = null;
+let authorizedAccessCode = null;
 
-let selectedTextElement = null;
+let activeMode = "hand"; // hand | pen | highlighter | eraser
 
+let renderGeneration = 0;
+let pageObserver = null;
+let pageJumpTimer = null;
 
-/*
-   رقم عملية الرسم الحالية.
+let currentSpeechSentence = [];
+let currentSpeechPageContainer = null;
 
-   يمنع الصفحة القديمة من الظهور
-   إذا ضغط المستخدم بسرعة على التنقل.
-*/
+let annotationStore = {};
+let annotationStorageKey = "";
 
-let renderId = 0;
+let activeDrawing = null;
+
+const renderedPages = new Map();
 
 
 /* ======================================================
-   إظهار شاشة الدخول
+   عرض الشاشات
 ====================================================== */
 
 function showLoginScreen() {
-
     loginScreen.hidden = false;
-
     policyScreen.hidden = true;
-
     readerApp.hidden = true;
-
 }
-
-
-/* ======================================================
-   إظهار سياسة الاستخدام
-====================================================== */
 
 function showPolicyScreen() {
-
     loginScreen.hidden = true;
-
     policyScreen.hidden = false;
-
     readerApp.hidden = true;
-
 }
 
-
-/* ======================================================
-   إظهار القارئ
-====================================================== */
-
 function showReaderApp() {
-
     loginScreen.hidden = true;
-
     policyScreen.hidden = true;
-
     readerApp.hidden = false;
-
 }
 
 
@@ -242,998 +147,1133 @@ function showReaderApp() {
    LOGIN
 ====================================================== */
 
-loginForm.addEventListener(
-    "submit",
-    function (event) {
+loginForm.addEventListener("submit", function (event) {
+    event.preventDefault();
 
-        event.preventDefault();
+    const code = accessCodeInput.value.trim();
 
-        const code =
-            accessCodeInput.value.trim();
+    if (!/^\d{6}$/.test(code)) {
+        loginError.textContent =
+            "الرجاء إدخال رمز سري مكوّن من 6 أرقام.";
+        loginError.hidden = false;
+        return;
+    }
 
+    const pdfPath = ACCESS_CODES[code];
 
-        /*
-           يجب أن يكون 6 أرقام.
-        */
+    if (!pdfPath) {
+        loginError.textContent =
+            "الرمز غير صحيح. تأكد من إدخال الرمز الصحيح.";
+        loginError.hidden = false;
+        return;
+    }
 
-        if (!/^\d{6}$/.test(code)) {
+    authorizedPdfPath = pdfPath;
+    authorizedAccessCode = code;
 
-            loginError.textContent =
-                "الرجاء إدخال رمز سري مكوّن من 6 أرقام.";
+    sessionStorage.setItem("accessGranted", "true");
+    sessionStorage.setItem("authorizedPdfPath", authorizedPdfPath);
+    sessionStorage.setItem("authorizedAccessCode", authorizedAccessCode);
 
-            loginError.hidden = false;
+    loginError.hidden = true;
+    policyAgreement.checked = false;
+    policyError.hidden = true;
 
-            return;
+    showPolicyScreen();
+});
 
-        }
-
-
-        /*
-           البحث عن الملف.
-        */
-
-        const pdfPath =
-            ACCESS_CODES[code];
-
-
-        if (!pdfPath) {
-
-            loginError.textContent =
-                "الرمز غير صحيح. تأكد من إدخال الرمز الصحيح.";
-
-            loginError.hidden = false;
-
-            return;
-
-        }
+accessCodeInput.addEventListener("input", function () {
+    this.value = this.value.replace(/\D/g, "").slice(0, 6);
+});
 
 
-        /*
-           حفظ الملف المصرح به.
-        */
+/* ======================================================
+   POLICY
+====================================================== */
 
+continueButton.addEventListener("click", async function () {
+    if (!policyAgreement.checked) {
+        policyError.textContent =
+            "يجب الموافقة على الإقرار قبل المتابعة.";
+        policyError.hidden = false;
+        return;
+    }
+
+    policyError.hidden = true;
+
+    if (!authorizedPdfPath) {
         authorizedPdfPath =
-            pdfPath;
-
-
-        sessionStorage.setItem(
-            "accessGranted",
-            "true"
-        );
-
-
-        sessionStorage.setItem(
-            "authorizedPdfPath",
-            authorizedPdfPath
-        );
-
-
-        /*
-           الانتقال إلى السياسة.
-        */
-
-        loginError.hidden = true;
-
-        policyAgreement.checked = false;
-
-        policyError.hidden = true;
-
-        showPolicyScreen();
-
+            sessionStorage.getItem("authorizedPdfPath");
     }
-);
+
+    if (!authorizedPdfPath) {
+        showLoginScreen();
+        return;
+    }
+
+    sessionStorage.setItem("policyAccepted", "true");
+
+    showReaderApp();
+
+    await openPDF(authorizedPdfPath);
+});
 
 
 /* ======================================================
-   منع إدخال أي شيء غير الأرقام
-====================================================== */
-
-accessCodeInput.addEventListener(
-    "input",
-    function () {
-
-        this.value =
-            this.value
-                .replace(/\D/g, "")
-                .slice(0, 6);
-
-    }
-);
-
-
-/* ======================================================
-   POLICY AGREEMENT
-====================================================== */
-
-continueButton.addEventListener(
-    "click",
-    async function () {
-
-        if (!policyAgreement.checked) {
-
-            policyError.textContent =
-                "يجب الموافقة على الإقرار قبل المتابعة.";
-
-            policyError.hidden = false;
-
-            return;
-
-        }
-
-
-        policyError.hidden = true;
-
-
-        /*
-           التأكد من وجود ملف.
-        */
-
-        if (!authorizedPdfPath) {
-
-            authorizedPdfPath =
-                sessionStorage.getItem(
-                    "authorizedPdfPath"
-                );
-
-        }
-
-
-        if (!authorizedPdfPath) {
-
-            showLoginScreen();
-
-            return;
-
-        }
-
-
-        /*
-           حفظ الموافقة.
-        */
-
-        sessionStorage.setItem(
-            "policyAccepted",
-            "true"
-        );
-
-
-        showReaderApp();
-
-
-        await openPDF(
-            authorizedPdfPath
-        );
-
-    }
-);
-
-
-/* ======================================================
-   استعادة الجلسة
+   RESTORE SESSION
 ====================================================== */
 
 function restoreSession() {
-
     const accessGranted =
-        sessionStorage.getItem(
-            "accessGranted"
-        );
-
+        sessionStorage.getItem("accessGranted");
 
     const policyAccepted =
-        sessionStorage.getItem(
-            "policyAccepted"
-        );
-
+        sessionStorage.getItem("policyAccepted");
 
     const savedPdfPath =
-        sessionStorage.getItem(
-            "authorizedPdfPath"
-        );
+        sessionStorage.getItem("authorizedPdfPath");
 
+    if (accessGranted === "true" && savedPdfPath) {
+        authorizedPdfPath = savedPdfPath;
 
-    if (
-        accessGranted === "true" &&
-        savedPdfPath
-    ) {
-
-        authorizedPdfPath =
-            savedPdfPath;
-
-
-        if (
-            policyAccepted === "true"
-        ) {
-
+        if (policyAccepted === "true") {
             showReaderApp();
-
-            openPDF(
-                authorizedPdfPath
-            );
-
+            openPDF(authorizedPdfPath);
         } else {
-
             showPolicyScreen();
-
         }
 
-
         return;
-
     }
 
-
     showLoginScreen();
-
 }
 
 
 /* ======================================================
-   تحميل PDF
+   ANNOTATION STORAGE
 ====================================================== */
 
-async function openPDF(
-    pdfPath
-) {
+function getAnnotationStorageKey(pdfPath) {
+    const safeCode =
+        String(
+            authorizedAccessCode || "unknown"
+        )
+        .replace(/[^0-9a-zA-Z_-]/g, "_")
+        .slice(0, 80);
+
+    const safePath =
+        String(pdfPath)
+            .replace(/[^a-zA-Z0-9_-]/g, "_")
+            .slice(0, 150);
+
+    return (
+        "yazeedInteractiveReaderAnnotations:" +
+        `${safeCode}:${safePath}`
+    );
+}
+
+function loadAnnotations() {
+    annotationStorageKey =
+        getAnnotationStorageKey(authorizedPdfPath);
 
     try {
+        const raw =
+            localStorage.getItem(annotationStorageKey);
 
+        annotationStore =
+            raw ? JSON.parse(raw) : {};
+
+    } catch (error) {
+        console.error("تعذر تحميل التحديدات:", error);
+        annotationStore = {};
+    }
+}
+
+function saveAnnotations() {
+    try {
+        localStorage.setItem(
+            annotationStorageKey,
+            JSON.stringify(annotationStore)
+        );
+    } catch (error) {
+        console.error("تعذر حفظ التحديدات:", error);
+        statusMessage.textContent =
+            "تعذر حفظ بعض التحديدات محلياً.";
+    }
+}
+
+function getPageAnnotations(pageNumber) {
+    const key = String(pageNumber);
+
+    if (!annotationStore[key]) {
+        annotationStore[key] = {
+            strokes: [],
+            highlights: []
+        };
+    }
+
+    if (!Array.isArray(annotationStore[key].strokes)) {
+        annotationStore[key].strokes = [];
+    }
+
+    if (!Array.isArray(annotationStore[key].highlights)) {
+        annotationStore[key].highlights = [];
+    }
+
+    return annotationStore[key];
+}
+
+
+/* ======================================================
+   PDF LOAD
+====================================================== */
+
+async function openPDF(pdfPath) {
+    try {
         statusMessage.textContent =
             "جارٍ تحميل الملف...";
 
+        window.speechSynthesis?.cancel();
 
-        /*
-           تحميل الملف.
-        */
+        loadAnnotations();
 
-        const response =
-            await fetch(
-                pdfPath,
-                {
-                    cache: "no-store"
-                }
-            );
-
+        const response = await fetch(pdfPath, {
+            cache: "no-store"
+        });
 
         if (!response.ok) {
-
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-
+            throw new Error(`HTTP ${response.status}`);
         }
-
 
         const arrayBuffer =
             await response.arrayBuffer();
 
-
-        /*
-           تحويل البيانات إلى Uint8Array.
-        */
-
         const data =
-            new Uint8Array(
-                arrayBuffer
-            );
-
-
-        /*
-           PDF.js.
-        */
+            new Uint8Array(arrayBuffer);
 
         const loadingTask =
-            pdfjsLib.getDocument({
-                data: data
-            });
-
+            pdfjsLib.getDocument({ data });
 
         pdfDocument =
             await loadingTask.promise;
 
-
-        /*
-           عدد الصفحات.
-        */
-
         totalPagesElement.textContent =
             pdfDocument.numPages;
 
-
         currentPage = 1;
+        pageInput.value = "1";
 
         scale = 1;
 
+        zoomLevelElement.textContent = "100%";
+
+        await buildContinuousViewer();
 
         statusMessage.textContent =
             "تم تحميل الملف بنجاح";
 
-
-        /*
-           رسم الصفحة الأولى.
-        */
-
-        await renderPage(
-            currentPage
-        );
-
-
         updateNavigation();
 
-    }
+        maybeShowPronunciationNotice();
 
-    catch (error) {
-
-        console.error(
-            "خطأ في تحميل PDF:",
-            error
-        );
-
+    } catch (error) {
+        console.error("خطأ في تحميل PDF:", error);
 
         statusMessage.textContent =
             "تعذر تحميل الملف";
 
+        pdfViewer.innerHTML = `
+            <div class="pdf-error">
+                تعذر فتح الملف. تأكد من مسار ملف PDF.
+            </div>
+        `;
     }
-
 }
 
 
 /* ======================================================
-   رسم صفحة PDF
+   CONTINUOUS VIEWER
 ====================================================== */
 
-async function renderPage(
-    pageNumber
-) {
-
+async function buildContinuousViewer(targetPage = currentPage) {
     if (!pdfDocument) {
-
         return;
-
     }
 
+    renderGeneration++;
 
-    /*
-       إنشاء رقم للعملية الحالية.
-    */
+    renderedPages.clear();
 
-    const thisRenderId =
-        ++renderId;
-
-
-    /*
-       الحصول على الصفحة.
-    */
-
-    const page =
-        await pdfDocument.getPage(
-            pageNumber
-        );
-
-
-    /*
-       إذا بدأت عملية رسم أخرى،
-       تجاهل هذه العملية.
-    */
-
-    if (
-        thisRenderId !== renderId
-    ) {
-
-        return;
-
+    if (pageObserver) {
+        pageObserver.disconnect();
+        pageObserver = null;
     }
-
-
-    /*
-       viewport الأساسي.
-    */
-
-    const viewport =
-        page.getViewport({
-            scale: scale
-        });
-
-
-    /*
-       تنظيف الصفحة السابقة.
-    */
 
     pdfViewer.innerHTML = "";
 
+    const fragment = document.createDocumentFragment();
 
-    /*
-       حاوية الصفحة.
-    */
+    for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber++) {
+        const page = await pdfDocument.getPage(pageNumber);
 
+        const viewport = page.getViewport({ scale });
+
+        const pageContainer =
+            document.createElement("div");
+
+        pageContainer.className = "pdf-page";
+        pageContainer.dataset.pageNumber = String(pageNumber);
+
+        pageContainer.style.width =
+            `${viewport.width}px`;
+
+        pageContainer.style.height =
+            `${viewport.height}px`;
+
+        pageContainer.setAttribute(
+            "aria-label",
+            `صفحة ${pageNumber}`
+        );
+
+        const loadingLabel =
+            document.createElement("div");
+
+        loadingLabel.className = "page-loading";
+        loadingLabel.textContent = `صفحة ${pageNumber}`;
+
+        pageContainer.appendChild(loadingLabel);
+        fragment.appendChild(pageContainer);
+    }
+
+    pdfViewer.appendChild(fragment);
+
+    setupPageObserver();
+
+    requestAnimationFrame(() => {
+        scrollToPage(targetPage, "auto");
+        renderNearbyPages(targetPage);
+    });
+}
+
+function setupPageObserver() {
+    const pageElements =
+        pdfViewer.querySelectorAll(".pdf-page");
+
+    pageObserver =
+        new IntersectionObserver(
+            (entries) => {
+                const visible =
+                    entries
+                        .filter(entry => entry.isIntersecting)
+                        .sort(
+                            (a, b) =>
+                                b.intersectionRatio -
+                                a.intersectionRatio
+                        );
+
+                if (visible.length > 0) {
+                    const pageNumber =
+                        Number(
+                            visible[0]
+                                .target
+                                .dataset
+                                .pageNumber
+                        );
+
+                    setCurrentPage(pageNumber);
+                    renderNearbyPages(pageNumber);
+                }
+            },
+            {
+                root: viewerContainer,
+                threshold: [0.25, 0.5, 0.75]
+            }
+        );
+
+    pageElements.forEach(pageElement => {
+        pageObserver.observe(pageElement);
+    });
+}
+
+function renderNearbyPages(centerPage) {
+    const first =
+        Math.max(1, centerPage - 1);
+
+    const last =
+        Math.min(
+            pdfDocument.numPages,
+            centerPage + 1
+        );
+
+    for (let pageNumber = first; pageNumber <= last; pageNumber++) {
+        renderPage(pageNumber);
+    }
+}
+
+async function renderPage(pageNumber) {
     const pageContainer =
-        document.createElement(
-            "div"
+        pdfViewer.querySelector(
+            `.pdf-page[data-page-number="${pageNumber}"]`
         );
 
+    if (!pageContainer || renderedPages.has(pageNumber)) {
+        return;
+    }
 
-    pageContainer.className =
-        "pdf-page";
+    renderedPages.set(pageNumber, true);
 
+    const generation = renderGeneration;
 
-    pageContainer.style.width =
-        `${viewport.width}px`;
+    try {
+        const page =
+            await pdfDocument.getPage(pageNumber);
 
+        if (generation !== renderGeneration) {
+            return;
+        }
 
-    pageContainer.style.height =
-        `${viewport.height}px`;
+        const viewport =
+            page.getViewport({ scale });
 
+        const outputScale =
+            window.devicePixelRatio || 1;
 
-    /*
-       ==================================================
-       CANVAS
-       ==================================================
-    */
+        pageContainer.innerHTML = "";
 
-    const canvas =
-        document.createElement(
-            "canvas"
-        );
+        /*
+         ==================================================
+         CANVAS
+         ==================================================
+        */
 
+        const canvas =
+            document.createElement("canvas");
 
-    const context =
-        canvas.getContext(
-            "2d"
-        );
+        const context =
+            canvas.getContext("2d", {
+                alpha: false
+            });
 
+        canvas.width =
+            Math.floor(
+                viewport.width *
+                outputScale
+            );
 
-    /*
-       دعم الشاشات عالية الدقة.
-    */
+        canvas.height =
+            Math.floor(
+                viewport.height *
+                outputScale
+            );
 
-    const outputScale =
-        window.devicePixelRatio || 1;
+        canvas.style.width =
+            `${viewport.width}px`;
 
+        canvas.style.height =
+            `${viewport.height}px`;
 
-    canvas.width =
-        Math.floor(
-            viewport.width *
-            outputScale
-        );
+        canvas.className = "pdf-canvas";
 
-
-    canvas.height =
-        Math.floor(
-            viewport.height *
-            outputScale
-        );
-
-
-    canvas.style.width =
-        `${viewport.width}px`;
-
-
-    canvas.style.height =
-        `${viewport.height}px`;
-
-
-    /*
-       تحويل الرسم إلى Retina resolution.
-    */
-
-    const renderContext = {
-
-        canvasContext:
-            context,
-
-        viewport:
-            page.getViewport({
+        await page.render({
+            canvasContext: context,
+            viewport: page.getViewport({
                 scale:
                     scale *
                     outputScale
             })
+        }).promise;
 
-    };
+        /*
+         ==================================================
+         TEXT LAYER
+         ==================================================
+        */
 
+        const textLayerDiv =
+            document.createElement("div");
 
-    /*
-       رسم PDF.
-    */
+        textLayerDiv.className =
+            "textLayer";
 
-    await page.render(
-        renderContext
-    ).promise;
+        const textContent =
+            await page.getTextContent();
 
-
-    if (
-        thisRenderId !== renderId
-    ) {
-
-        return;
-
-    }
-
-
-    pageContainer.appendChild(
-        canvas
-    );
-
-
-    /*
-       ==================================================
-       TEXT LAYER
-       ==================================================
-    */
-
-    const textLayerDiv =
-        document.createElement(
-            "div"
-        );
-
-
-    /*
-       الاسم الذي يستخدمه PDF.js.
-    */
-
-    textLayerDiv.className =
-        "textLayer";
-
-
-    pageContainer.appendChild(
-        textLayerDiv
-    );
-
-
-    /*
-       الحصول على النص.
-    */
-
-    const textContent =
-        await page.getTextContent();
-
-
-    /*
-       ==================================================
-       PDF.JS NATIVE TEXT LAYER
-       ==================================================
-
-       في PDF.js 4.10.38،
-       TextLayer متوفر من pdfjsLib.
-
-       لا نقوم بتحديد:
-
-       left
-       top
-       font-size
-       transform
-
-       بأنفسنا.
-
-       PDF.js يقوم بكل ذلك.
-    */
-
-    if (
-        typeof pdfjsLib.TextLayer ===
-        "function"
-    ) {
+        if (typeof pdfjsLib.TextLayer !== "function") {
+            throw new Error(
+                "PDF.js TextLayer غير متوفر."
+            );
+        }
 
         const textLayer =
             new pdfjsLib.TextLayer({
-
-                textContentSource:
-                    textContent,
-
-                container:
-                    textLayerDiv,
-
-                viewport:
-                    viewport
-
+                textContentSource: textContent,
+                container: textLayerDiv,
+                viewport
             });
-
 
         await textLayer.render();
 
-    }
-
-    else {
-
         /*
-           في حال كانت نسخة CDN لا تصدر
-           TextLayer بهذه الطريقة.
+         ==================================================
+         ANNOTATION CANVAS
+         ==================================================
         */
 
-        console.error(
-            "PDF.js TextLayer غير متوفر في هذه النسخة."
+        const annotationCanvas =
+            document.createElement("canvas");
+
+        annotationCanvas.className =
+            "annotation-canvas";
+
+        annotationCanvas.width =
+            Math.floor(
+                viewport.width *
+                outputScale
+            );
+
+        annotationCanvas.height =
+            Math.floor(
+                viewport.height *
+                outputScale
+            );
+
+        annotationCanvas.style.width =
+            `${viewport.width}px`;
+
+        annotationCanvas.style.height =
+            `${viewport.height}px`;
+
+        annotationCanvas.dataset.pageNumber =
+            String(pageNumber);
+
+        pageContainer.appendChild(canvas);
+        pageContainer.appendChild(textLayerDiv);
+        pageContainer.appendChild(annotationCanvas);
+
+        setupTextInteraction(
+            textLayerDiv,
+            pageContainer,
+            pageNumber
         );
 
+        setupAnnotationCanvas(
+            annotationCanvas,
+            pageContainer,
+            pageNumber
+        );
 
-        statusMessage.textContent =
-            "خطأ في تشغيل طبقة النص.";
+        redrawAnnotations(
+            pageContainer,
+            pageNumber
+        );
 
+        applyModeToPage(pageContainer);
+
+    } catch (error) {
+        console.error(
+            `تعذر رسم الصفحة ${pageNumber}:`,
+            error
+        );
+
+        renderedPages.delete(pageNumber);
+
+        pageContainer.innerHTML = "";
+
+        const errorMessage =
+            document.createElement("div");
+
+        errorMessage.className = "page-error";
+        errorMessage.textContent =
+            `تعذر رسم الصفحة ${pageNumber}`;
+
+        pageContainer.appendChild(errorMessage);
+    }
+}
+
+
+/* ======================================================
+   PAGE STATE
+====================================================== */
+
+function setCurrentPage(pageNumber) {
+    if (!pdfDocument) {
         return;
-
     }
 
+    currentPage =
+        Math.max(
+            1,
+            Math.min(
+                pageNumber,
+                pdfDocument.numPages
+            )
+        );
 
-    /*
-       إضافة الصفحة.
-    */
+    pageInput.value =
+        String(currentPage);
 
-    pdfViewer.appendChild(
-        pageContainer
-    );
+    updateNavigation();
+}
+
+function updateNavigation() {
+    if (!pdfDocument) {
+        previousPageButton.disabled = true;
+        nextPageButton.disabled = true;
+        return;
+    }
+
+    previousPageButton.disabled =
+        currentPage <= 1;
+
+    nextPageButton.disabled =
+        currentPage >= pdfDocument.numPages;
+}
+
+function scrollToPage(pageNumber, behavior = "smooth") {
+    if (!pdfDocument) {
+        return;
+    }
+
+    const target =
+        Math.max(
+            1,
+            Math.min(
+                Number(pageNumber) || 1,
+                pdfDocument.numPages
+            )
+        );
+
+    const pageElement =
+        pdfViewer.querySelector(
+            `.pdf-page[data-page-number="${target}"]`
+        );
+
+    if (!pageElement) {
+        return;
+    }
+
+    setCurrentPage(target);
+
+    pageElement.scrollIntoView({
+        behavior,
+        block: "start"
+    });
+
+    renderNearbyPages(target);
+}
 
 
-    /*
-       إضافة النقر للنص.
-    */
+/* ======================================================
+   PAGE INPUT
+   بدون الحاجة إلى Enter
+====================================================== */
 
-    setupTextInteraction(
-        textLayerDiv
-    );
+function navigateFromPageInput() {
+    if (!pdfDocument) {
+        return;
+    }
+
+    let requested =
+        parseInt(
+            pageInput.value,
+            10
+        );
+
+    if (Number.isNaN(requested)) {
+        pageInput.value =
+            String(currentPage);
+        return;
+    }
+
+    requested =
+        Math.max(
+            1,
+            Math.min(
+                requested,
+                pdfDocument.numPages
+            )
+        );
+
+    pageInput.value =
+        String(requested);
+
+    scrollToPage(requested);
+}
+
+/*
+   لا نحتاج إلى ضغط Enter.
+   عندما ينتهي المستخدم من الكتابة
+   ويترك خانة الرقم، ينتقل للصفحة.
+*/
+pageInput.addEventListener(
+    "change",
+    navigateFromPageInput
+);
+
+pageInput.addEventListener(
+    "blur",
+    navigateFromPageInput
+);
+
+pageInput.addEventListener(
+    "keydown",
+    function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            navigateFromPageInput();
+            pageInput.blur();
+        }
+    }
+);
 
 
-    /*
-       تحديث المعلومات.
-    */
+/* ======================================================
+   PREVIOUS / NEXT
+====================================================== */
 
-    currentPageElement.textContent =
-        currentPage;
+previousPageButton.addEventListener(
+    "click",
+    function () {
+        if (currentPage > 1) {
+            scrollToPage(
+                currentPage - 1
+            );
+        }
+    }
+);
 
+nextPageButton.addEventListener(
+    "click",
+    function () {
+        if (
+            pdfDocument &&
+            currentPage < pdfDocument.numPages
+        ) {
+            scrollToPage(
+                currentPage + 1
+            );
+        }
+    }
+);
+
+
+/* ======================================================
+   ZOOM
+====================================================== */
+
+async function rebuildAtCurrentZoom() {
+    const targetPage = currentPage;
+
+    await buildContinuousViewer(targetPage);
 
     zoomLevelElement.textContent =
         `${Math.round(scale * 100)}%`;
-
-
-    selectedTextElement =
-        null;
-
 }
+
+zoomInButton.addEventListener(
+    "click",
+    async function () {
+        if (!pdfDocument) {
+            return;
+        }
+
+        scale =
+            Math.min(
+                3,
+                Number(
+                    (scale + 0.1).toFixed(2)
+                )
+            );
+
+        await rebuildAtCurrentZoom();
+    }
+);
+
+zoomOutButton.addEventListener(
+    "click",
+    async function () {
+        if (!pdfDocument) {
+            return;
+        }
+
+        scale =
+            Math.max(
+                0.5,
+                Number(
+                    (scale - 0.1).toFixed(2)
+                )
+            );
+
+        await rebuildAtCurrentZoom();
+    }
+);
 
 
 /* ======================================================
-   التعامل مع نص TextLayer
+   TEXT HELPERS
+====================================================== */
+
+function normalizeText(text) {
+    return String(text || "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function containsEnglish(text) {
+    return /[A-Za-z]/.test(text);
+}
+
+function isSentenceEnding(text) {
+    return /[.!?]["'”’)\]]*\s*$/.test(text);
+}
+
+/*
+   PDF.js can split one visual sentence into many spans.
+   We therefore keep a lightweight reading-order list, but we
+   NEVER use the entire page as a fallback sentence.
+*/
+function buildSentenceGroups(spans) {
+    const groups = [];
+    let current = [];
+
+    spans.forEach(span => {
+        const text = normalizeText(span.textContent);
+        if (!text || !containsEnglish(text)) return;
+
+        current.push(span);
+
+        if (isSentenceEnding(text)) {
+            groups.push(current);
+            current = [];
+        }
+    });
+
+    if (current.length) {
+        groups.push(current);
+    }
+
+    return groups;
+}
+
+function findSentenceForSpan(span, sentenceGroups) {
+    const group = sentenceGroups.find(g => g.includes(span));
+    return group && group.length ? group : [span];
+}
+
+function getGroupText(group) {
+    return normalizeText(
+        group
+            .map(span => normalizeText(span.textContent))
+            .filter(Boolean)
+            .join(" ")
+    );
+}
+
+/*
+   Find the exact word under the pointer inside a PDF.js span.
+   This prevents a large text span from causing the whole line/page
+   to be spoken when the user only clicked one word.
+*/
+function getWordAtPoint(event, fallbackSpan) {
+    let range = null;
+
+    try {
+        if (document.caretPositionFromPoint) {
+            const position = document.caretPositionFromPoint(
+                event.clientX,
+                event.clientY
+            );
+
+            if (position && position.offsetNode) {
+                range = document.createRange();
+                range.setStart(position.offsetNode, position.offset);
+                range.collapse(true);
+            }
+        } else if (document.caretRangeFromPoint) {
+            range = document.caretRangeFromPoint(
+                event.clientX,
+                event.clientY
+            );
+        }
+    } catch (error) {
+        range = null;
+    }
+
+    if (!range) {
+        return normalizeText(fallbackSpan.textContent);
+    }
+
+    const textNode = range.startContainer;
+    if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
+        return normalizeText(fallbackSpan.textContent);
+    }
+
+    if (!fallbackSpan.contains(textNode)) {
+        return normalizeText(fallbackSpan.textContent);
+    }
+
+    const fullText = textNode.textContent || "";
+    const offset = Math.max(
+        0,
+        Math.min(range.startOffset, fullText.length)
+    );
+
+    let start = offset;
+    let end = offset;
+
+    while (start > 0 && !/\s/.test(fullText[start - 1])) {
+        start--;
+    }
+
+    while (end < fullText.length && !/\s/.test(fullText[end])) {
+        end++;
+    }
+
+    const word = normalizeText(fullText.slice(start, end));
+
+    return word || normalizeText(fallbackSpan.textContent);
+}
+
+function getSentenceFromTextPosition(span, sentenceGroups) {
+    return findSentenceForSpan(span, sentenceGroups);
+}
+
+/* ======================================================
+   TEXT INTERACTION
 ====================================================== */
 
 function setupTextInteraction(
-    textLayer
+    textLayer,
+    pageContainer,
+    pageNumber
 ) {
+    const spans = Array.from(
+        textLayer.querySelectorAll("span")
+    ).filter(span => {
+        const text = normalizeText(span.textContent);
+        return text && containsEnglish(text);
+    });
 
-    const spans =
-        textLayer.querySelectorAll(
-            "span"
-        );
+    if (!spans.length) return;
 
+    const sentenceGroups = buildSentenceGroups(spans);
 
-    spans.forEach(
-        function (span) {
+    spans.forEach((span, index) => {
+        const text = normalizeText(span.textContent);
 
-            const text =
-                normalizeText(
-                    span.textContent
-                );
+        span.classList.add("clickable-text");
+        span.dataset.textIndex = String(index);
+        span.dataset.speechText = text;
+        span.title = "اضغط لسماع النطق — نقرتان للجملة";
 
+        span.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
 
-            if (!text) {
-
+            if (activeMode !== "hand" && activeMode !== "highlighter") {
                 return;
-
             }
-
 
             /*
-               نضيف النقر فقط للنص الإنجليزي.
+               Wait briefly so a double-click does not trigger both
+               word and sentence actions.
             */
-
-            if (
-                !containsEnglish(
-                    text
-                )
-            ) {
-
-                return;
-
+            if (pageContainer._speechClickTimer) {
+                clearTimeout(pageContainer._speechClickTimer);
             }
 
+            pageContainer._speechClickTimer = setTimeout(() => {
+                pageContainer._speechClickTimer = null;
 
-            span.classList.add(
-                "clickable-word"
-            );
+                const word = getWordAtPoint(event, span);
+                const target = word || text;
 
-
-            span.dataset.speechText =
-                text;
-
-
-            span.title =
-                "اضغط لسماع النطق";
-
-
-            span.addEventListener(
-                "click",
-                function (event) {
-
-                    event.preventDefault();
-
-                    event.stopPropagation();
-
-
-                    selectTextAndSpeak(
-                        span,
-                        text
+                if (activeMode === "hand") {
+                    handlePronunciation(
+                        pageContainer,
+                        [span],
+                        pageNumber,
+                        target
                     );
-
+                } else {
+                    createPersistentHighlight(
+                        pageContainer,
+                        [span],
+                        pageNumber,
+                        target
+                    );
                 }
+            }, 180);
+        });
+
+        span.addEventListener("dblclick", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (pageContainer._speechClickTimer) {
+                clearTimeout(pageContainer._speechClickTimer);
+                pageContainer._speechClickTimer = null;
+            }
+
+            if (activeMode !== "hand" && activeMode !== "highlighter") {
+                return;
+            }
+
+            const sentence = getSentenceFromTextPosition(
+                span,
+                sentenceGroups
             );
 
-        }
-    );
+            /*
+               Safety guard: never allow a fallback that spans an
+               abnormally large portion of the page.
+            */
+            const safeSentence =
+                sentence.length > 80 ? [span] : sentence;
 
+            if (activeMode === "hand") {
+                handlePronunciation(
+                    pageContainer,
+                    safeSentence,
+                    pageNumber,
+                    getGroupText(safeSentence)
+                );
+            } else {
+                createPersistentHighlight(
+                    pageContainer,
+                    safeSentence,
+                    pageNumber,
+                    getGroupText(safeSentence)
+                );
+            }
+        });
+    });
 }
 
-
 /* ======================================================
-   تنظيف النص
+   TEMPORARY PRONUNCIATION HIGHLIGHT
 ====================================================== */
 
-function normalizeText(
-    text
+function handlePronunciation(
+    pageContainer,
+    selectedSpans,
+    pageNumber,
+    explicitText = ""
 ) {
+    clearTemporarySpeechHighlight();
 
-    return text
-        .replace(/\s+/g, " ")
-        .trim();
+    const spans = Array.isArray(selectedSpans) ? selectedSpans : [];
+    if (!spans.length) return;
 
-}
+    currentSpeechSentence = spans;
+    currentSpeechPageContainer = pageContainer;
 
+    spans.forEach(span => {
+        span.classList.add("speech-highlight");
+    });
 
-/* ======================================================
-   اكتشاف الإنجليزية
-====================================================== */
+    const text = normalizeText(explicitText) || getGroupText(spans);
 
-function containsEnglish(
-    text
-) {
-
-    return /[A-Za-z]/.test(
-        text
-    );
-
-}
-
-
-/* ======================================================
-   تحديد النص + النطق
-====================================================== */
-
-function selectTextAndSpeak(
-    element,
-    text
-) {
-
-    /*
-       إزالة التحديد السابق.
-    */
-
-    if (
-        selectedTextElement
-    ) {
-
-        selectedTextElement.classList.remove(
-            "selected-word"
-        );
-
+    if (!text) {
+        clearTemporarySpeechHighlight();
+        return;
     }
 
-
-    /*
-       تحديد الحالي.
-    */
-
-    element.classList.add(
-        "selected-word"
-    );
-
-
-    selectedTextElement =
-        element;
-
-
-    /*
-       النطق.
-    */
-
     speak(
-        text
+        text,
+        () => clearTemporarySpeechHighlight(),
+        pageNumber
     );
-
 }
 
+function clearTemporarySpeechHighlight() {
+    currentSpeechSentence.forEach(span => {
+        span.classList.remove("speech-highlight");
+    });
+
+    currentSpeechSentence = [];
+    currentSpeechPageContainer = null;
+}
 
 /* ======================================================
    SPEECH SYNTHESIS
 ====================================================== */
 
-function speak(
-    text
-) {
-
-    if (
-        !("speechSynthesis" in window)
-    ) {
-
+function speak(text, onComplete, pageNumber) {
+    if (!("speechSynthesis" in window)) {
         pronunciationStatus.textContent =
             "النطق غير مدعوم في هذا المتصفح.";
-
+        onComplete?.();
         return;
-
     }
 
+    const cleanText = normalizeText(text);
 
-    text =
-        normalizeText(
-            text
-        );
-
-
-    if (!text) {
-
+    if (!cleanText) {
+        onComplete?.();
         return;
-
     }
-
-
-    /*
-       إيقاف النطق السابق.
-    */
 
     speechSynthesis.cancel();
 
+    const utterance = new SpeechSynthesisUtterance(cleanText);
 
-    /*
-       إنشاء النطق.
-    */
-
-    const utterance =
-        new SpeechSynthesisUtterance(
-            text
-        );
-
-
-   /*
-   الصوت.
-
-   إذا كان صوت Samantha متوفراً،
-   استخدمه تلقائياً.
-
-   إذا لم يكن متوفراً،
-   استخدم الصوت الذي اختاره المستخدم.
-*/
-
-const voices =
-    speechSynthesis.getVoices();
-
-const samantha =
-    voices.find(
-        voice =>
-            voice.name
-                .toLowerCase()
-                .includes("samantha")
+    const availableVoices = speechSynthesis.getVoices();
+    const samantha = availableVoices.find(voice =>
+        voice.name.toLowerCase().includes("samantha")
     );
 
-if (samantha) {
+    if (samantha) {
+        utterance.voice = samantha;
+        utterance.lang = samantha.lang;
+    } else if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        utterance.lang = selectedVoice.lang;
+    } else {
+        utterance.lang = "en-US";
+    }
 
-    utterance.voice =
-        samantha;
+    utterance.rate = speechRate;
+    utterance.pitch = 1;
 
-    utterance.lang =
-        samantha.lang;
+    let completed = false;
+    const finish = () => {
+        if (completed) return;
+        completed = true;
+        onComplete?.();
+    };
 
+    utterance.onstart = function () {
+        pronunciationStatus.textContent = `🔊 ${cleanText}`;
+    };
+
+    utterance.onend = function () {
+        pronunciationStatus.textContent =
+            "🖐️ اضغط على أي كلمة إنجليزية لسماع النطق";
+        finish();
+    };
+
+    utterance.onerror = function (error) {
+        console.error("Speech error:", error);
+        pronunciationStatus.textContent = "تعذر تشغيل النطق.";
+        finish();
+    };
+
+    speechSynthesis.speak(utterance);
 }
-
-else if (selectedVoice) {
-
-    utterance.voice =
-        selectedVoice;
-
-    utterance.lang =
-        selectedVoice.lang;
-
-}
-
-else {
-
-    utterance.lang =
-        "en-US";
-
-}
-
-
-    /*
-       السرعة.
-    */
-
-    utterance.rate =
-        speechRate;
-
-
-    /*
-       Pitch.
-    */
-
-    utterance.pitch =
-        1;
-
-
-    /*
-       بداية النطق.
-    */
-
-    utterance.onstart =
-        function () {
-
-            pronunciationStatus.textContent =
-                `🔊 ${text}`;
-
-        };
-
-
-    /*
-       نهاية النطق.
-    */
-
-    utterance.onend =
-        function () {
-
-            pronunciationStatus.textContent =
-                "🔊 اضغط على النص الإنجليزي لسماع النطق";
-
-        };
-
-
-    /*
-       الخطأ.
-    */
-
-    utterance.onerror =
-        function (error) {
-
-            console.error(
-                "Speech error:",
-                error
-            );
-
-            pronunciationStatus.textContent =
-                "تعذر تشغيل النطق.";
-
-        };
-
-
-    speechSynthesis.speak(
-        utterance
-    );
-
-}
-
 
 /* ======================================================
    VOICES
 ====================================================== */
 
 function loadVoices() {
-
-    if (
-        !("speechSynthesis" in window)
-    ) {
-
+    if (!("speechSynthesis" in window)) {
         return;
-
     }
-
 
     voices =
         speechSynthesis.getVoices();
-
-
-    /*
-       الإنجليزية فقط.
-    */
 
     const englishVoices =
         voices.filter(
@@ -1244,56 +1284,31 @@ function loadVoices() {
                     .startsWith("en")
         );
 
-
-    if (
-        englishVoices.length === 0
-    ) {
-
+    if (englishVoices.length === 0) {
         return;
-
     }
-
 
     voiceSelect.innerHTML = "";
 
+    englishVoices.forEach(voice => {
+        const option =
+            document.createElement("option");
 
-    englishVoices.forEach(
-        function (voice) {
+        option.value =
+            `${voice.name}|${voice.lang}`;
 
-            const option =
-                document.createElement(
-                    "option"
-                );
+        option.textContent =
+            `${voice.name} — ${voice.lang}`;
 
-
-            option.value =
-                `${voice.name}|${voice.lang}`;
-
-
-            option.textContent =
-                `${voice.name} — ${voice.lang}`;
-
-
-            voiceSelect.appendChild(
-                option
-            );
-
-        }
-    );
-
-
-    /*
-       استعادة الصوت.
-    */
+        voiceSelect.appendChild(option);
+    });
 
     const savedVoice =
         localStorage.getItem(
             "pdfReaderVoice"
         );
 
-
     if (savedVoice) {
-
         const saved =
             englishVoices.find(
                 voice =>
@@ -1301,47 +1316,32 @@ function loadVoices() {
                     savedVoice
             );
 
-
         if (saved) {
-
-            selectedVoice =
-                saved;
-
-            voiceSelect.value =
-                savedVoice;
-
+            selectedVoice = saved;
+            voiceSelect.value = savedVoice;
             return;
-
         }
-
     }
 
-
-    /*
-       اختيار أول صوت.
-    */
+    const samantha =
+        englishVoices.find(
+            voice =>
+                voice.name
+                    .toLowerCase()
+                    .includes("samantha")
+        );
 
     selectedVoice =
-        englishVoices[0];
-
+        samantha || englishVoices[0];
 
     voiceSelect.value =
         `${selectedVoice.name}|${selectedVoice.lang}`;
-
 }
-
-
-/* ======================================================
-   تغيير الصوت
-====================================================== */
 
 voiceSelect.addEventListener(
     "change",
     function () {
-
-        const value =
-            this.value;
-
+        const value = this.value;
 
         selectedVoice =
             voices.find(
@@ -1350,16 +1350,22 @@ voiceSelect.addEventListener(
                     value
             );
 
-
         if (selectedVoice) {
-
             localStorage.setItem(
                 "pdfReaderVoice",
                 value
             );
-
         }
+    }
+);
 
+testVoiceButton.addEventListener(
+    "click",
+    function () {
+        speak(
+            "Hello! This is a pronunciation test.",
+            null
+        );
     }
 );
 
@@ -1369,340 +1375,873 @@ voiceSelect.addEventListener(
 ====================================================== */
 
 function updateSpeed() {
-
     speedValue.textContent =
         `${speechRate.toFixed(2)}×`;
-
 }
-
 
 speedRange.addEventListener(
     "input",
     function () {
-
         speechRate =
             parseFloat(
                 this.value
             );
 
-
         updateSpeed();
-
 
         localStorage.setItem(
             "pdfReaderSpeechRate",
-            speechRate
+            String(speechRate)
         );
-
     }
 );
-
-
-/* ======================================================
-   اختبار الصوت
-====================================================== */
-
-testVoiceButton.addEventListener(
-    "click",
-    function () {
-
-        speak(
-            "Hello! This is a pronunciation test."
-        );
-
-    }
-);
-
-
-/* ======================================================
-   استعادة إعدادات السرعة
-====================================================== */
 
 function loadSpeechSettings() {
-
     const savedRate =
         localStorage.getItem(
             "pdfReaderSpeechRate"
         );
 
-
     if (savedRate) {
-
         const parsed =
-            parseFloat(
-                savedRate
-            );
-
+            parseFloat(savedRate);
 
         if (
             !Number.isNaN(parsed) &&
             parsed >= 0.5 &&
             parsed <= 1.5
         ) {
-
-            speechRate =
-                parsed;
-
+            speechRate = parsed;
         }
-
     }
 
-
     speedRange.value =
-        speechRate;
-
+        String(speechRate);
 
     updateSpeed();
-
 }
 
 
 /* ======================================================
-   PAGE NAVIGATION
+   MODES
 ====================================================== */
 
-async function goToPage(
-    pageNumber
-) {
+const modeButtons = [
+    handTool,
+    penTool,
+    highlighterTool,
+    eraserTool
+];
 
-    if (!pdfDocument) {
+function setActiveMode(mode) {
+    activeMode = mode;
 
+    modeButtons.forEach(button => {
+        button.classList.remove("active");
+    });
+
+    const activeButton = {
+        hand: handTool,
+        pen: penTool,
+        highlighter: highlighterTool,
+        eraser: eraserTool
+    }[mode];
+
+    activeButton?.classList.add("active");
+
+    document.body.dataset.readerMode =
+        mode;
+
+    document.querySelectorAll(".pdf-page")
+        .forEach(applyModeToPage);
+}
+
+function applyModeToPage(pageContainer) {
+    const textLayer =
+        pageContainer.querySelector(
+            ".textLayer"
+        );
+
+    const annotationCanvas =
+        pageContainer.querySelector(
+            ".annotation-canvas"
+        );
+
+    if (!textLayer || !annotationCanvas) {
         return;
-
     }
 
+    /*
+       Hand + Highlighter:
+       النص يتلقى الضغط.
+    */
 
-    const target =
+    if (
+        activeMode === "hand" ||
+        activeMode === "highlighter"
+    ) {
+        textLayer.style.pointerEvents =
+            "auto";
+
+        annotationCanvas.style.pointerEvents =
+            "none";
+
+    } else {
+        /*
+           Pen + Eraser:
+           لوحة الرسم تتلقى الضغط.
+        */
+
+        textLayer.style.pointerEvents =
+            "none";
+
+        annotationCanvas.style.pointerEvents =
+            "auto";
+    }
+
+    annotationCanvas.style.cursor =
+        activeMode === "pen"
+            ? "crosshair"
+            : activeMode === "eraser"
+                ? "cell"
+                : "default";
+}
+
+handTool.addEventListener(
+    "click",
+    () => setActiveMode("hand")
+);
+
+penTool.addEventListener(
+    "click",
+    () => setActiveMode("pen")
+);
+
+highlighterTool.addEventListener(
+    "click",
+    () => setActiveMode("highlighter")
+);
+
+eraserTool.addEventListener(
+    "click",
+    () => setActiveMode("eraser")
+);
+
+penThickness.addEventListener(
+    "input",
+    function () {
+        thicknessValue.textContent =
+            this.value;
+    }
+);
+
+
+/* ======================================================
+   PEN DRAWING
+====================================================== */
+
+function setupAnnotationCanvas(
+    canvas,
+    pageContainer,
+    pageNumber
+) {
+    const ctx =
+        canvas.getContext("2d");
+
+    let drawing = false;
+
+    canvas.addEventListener(
+        "pointerdown",
+        function (event) {
+            if (activeMode !== "pen" && activeMode !== "eraser") {
+                return;
+            }
+
+            event.preventDefault();
+
+            canvas.setPointerCapture(
+                event.pointerId
+            );
+
+            if (activeMode === "pen") {
+                drawing = true;
+
+                const point =
+                    getNormalizedPoint(
+                        event,
+                        canvas
+                    );
+
+                activeDrawing = {
+                    pageNumber,
+                    points: [point],
+                    width: Number(
+                        penThickness.value
+                    )
+                };
+
+                redrawAnnotations(
+                    pageContainer,
+                    pageNumber,
+                    activeDrawing
+                );
+
+                return;
+            }
+
+            if (activeMode === "eraser") {
+                eraseAtPoint(
+                    event,
+                    canvas,
+                    pageContainer,
+                    pageNumber
+                );
+            }
+        }
+    );
+
+    canvas.addEventListener(
+        "pointermove",
+        function (event) {
+            if (
+                activeMode === "pen" &&
+                drawing &&
+                activeDrawing
+            ) {
+                event.preventDefault();
+
+                activeDrawing.points.push(
+                    getNormalizedPoint(
+                        event,
+                        canvas
+                    )
+                );
+
+                redrawAnnotations(
+                    pageContainer,
+                    pageNumber,
+                    activeDrawing
+                );
+            }
+        }
+    );
+
+    function finishDrawing(event) {
+        if (
+            activeMode !== "pen" ||
+            !drawing ||
+            !activeDrawing
+        ) {
+            return;
+        }
+
+        event.preventDefault();
+
+        drawing = false;
+
+        canvas.releasePointerCapture?.(
+            event.pointerId
+        );
+
+        if (
+            activeDrawing.points.length >= 2
+        ) {
+            const annotations =
+                getPageAnnotations(
+                    pageNumber
+                );
+
+            annotations.strokes.push(
+                activeDrawing
+            );
+
+            saveAnnotations();
+        }
+
+        activeDrawing = null;
+
+        redrawAnnotations(
+            pageContainer,
+            pageNumber
+        );
+    }
+
+    canvas.addEventListener(
+        "pointerup",
+        finishDrawing
+    );
+
+    canvas.addEventListener(
+        "pointercancel",
+        finishDrawing
+    );
+
+    canvas.addEventListener(
+        "pointerleave",
+        function () {
+            if (activeMode === "pen" && drawing) {
+                /*
+                   لا ننهي الرسم عند مغادرة
+                   الكانفاس لأن pointer capture
+                   سيبقي الرسم مستمراً.
+                */
+            }
+        }
+    );
+
+    canvas.addEventListener(
+        "click",
+        function (event) {
+            if (activeMode !== "eraser") {
+                return;
+            }
+
+            eraseAtPoint(
+                event,
+                canvas,
+                pageContainer,
+                pageNumber
+            );
+        }
+    );
+}
+
+function getNormalizedPoint(
+    event,
+    canvas
+) {
+    const rect =
+        canvas.getBoundingClientRect();
+
+    return {
+        x:
+            Math.max(
+                0,
+                Math.min(
+                    1,
+                    (event.clientX - rect.left) /
+                    rect.width
+                )
+            ),
+        y:
+            Math.max(
+                0,
+                Math.min(
+                    1,
+                    (event.clientY - rect.top) /
+                    rect.height
+                )
+            )
+    };
+}
+
+function drawCurrentStroke(
+    ctx,
+    canvas,
+    stroke
+) {
+    if (!stroke?.points?.length) {
+        return;
+    }
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+    ctx.save();
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.scale(
+        canvas.width / rect.width,
+        canvas.height / rect.height
+    );
+
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#dc2626";
+    ctx.lineWidth = Number(
+        stroke.width || 5
+    );
+
+    ctx.beginPath();
+
+    stroke.points.forEach(
+        (point, index) => {
+            const x =
+                point.x * rect.width;
+
+            const y =
+                point.y * rect.height;
+
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+    );
+
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+
+/* ======================================================
+   HIGHLIGHT
+====================================================== */
+
+function createPersistentHighlight(
+    pageContainer,
+    sentence,
+    pageNumber
+) {
+    const rect =
+        pageContainer.getBoundingClientRect();
+
+    if (!sentence || sentence.length === 0) {
+        return;
+    }
+
+    const pageRect =
+        pageContainer.getBoundingClientRect();
+
+    const rectangles = [];
+
+    sentence.forEach(span => {
+        const spanRect =
+            span.getBoundingClientRect();
+
+        if (
+            spanRect.width <= 0 ||
+            spanRect.height <= 0
+        ) {
+            return;
+        }
+
+        rectangles.push({
+            x:
+                (spanRect.left - pageRect.left) /
+                pageRect.width,
+
+            y:
+                (spanRect.top - pageRect.top) /
+                pageRect.height,
+
+            width:
+                spanRect.width /
+                pageRect.width,
+
+            height:
+                spanRect.height /
+                pageRect.height
+        });
+    });
+
+    if (rectangles.length === 0) {
+        return;
+    }
+
+    const annotations =
+        getPageAnnotations(
+            pageNumber
+        );
+
+    annotations.highlights.push(
+        rectangles
+    );
+
+    saveAnnotations();
+
+    redrawAnnotations(
+        pageContainer,
+        pageNumber
+    );
+}
+
+
+/* ======================================================
+   DRAW ALL PERSISTENT ANNOTATIONS
+====================================================== */
+
+function redrawAnnotations(
+    pageContainer,
+    pageNumber,
+    temporaryStroke = null
+) {
+    const canvas =
+        pageContainer.querySelector(
+            ".annotation-canvas"
+        );
+
+    if (!canvas) {
+        return;
+    }
+
+    const ctx =
+        canvas.getContext("2d");
+
+    const displayRect =
+        canvas.getBoundingClientRect();
+
+    const width =
+        displayRect.width;
+
+    const height =
+        displayRect.height;
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    /*
+       الرسم في CSS-pixel coordinates،
+       مع دعم Retina.
+    */
+
+    ctx.save();
+
+    ctx.scale(
+        canvas.width / width,
+        canvas.height / height
+    );
+
+    const annotations =
+        getPageAnnotations(
+            pageNumber
+        );
+
+    /*
+       ==================================================
+       HIGHLIGHTS
+       ==================================================
+    */
+
+    annotations.highlights.forEach(
+        group => {
+            group.forEach(rect => {
+                ctx.fillStyle =
+                    "rgba(250, 204, 21, 0.42)";
+
+                ctx.fillRect(
+                    rect.x * width,
+                    rect.y * height,
+                    rect.width * width,
+                    rect.height * height
+                );
+            });
+        }
+    );
+
+    /*
+       ==================================================
+       PEN STROKES
+       ==================================================
+    */
+
+    annotations.strokes.forEach(
+        stroke => {
+            drawStrokeOnContext(
+                ctx,
+                width,
+                height,
+                stroke
+            );
+        }
+    );
+
+    if (temporaryStroke) {
+        drawStrokeOnContext(
+            ctx,
+            width,
+            height,
+            temporaryStroke
+        );
+    }
+
+    ctx.restore();
+}
+
+function drawStrokeOnContext(
+    ctx,
+    width,
+    height,
+    stroke
+) {
+    if (!stroke?.points?.length) {
+        return;
+    }
+
+    ctx.save();
+
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#dc2626";
+    ctx.lineWidth =
+        Number(stroke.width || 5);
+
+    ctx.beginPath();
+
+    stroke.points.forEach(
+        (point, index) => {
+            const x =
+                point.x * width;
+
+            const y =
+                point.y * height;
+
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+    );
+
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+
+/* ======================================================
+   ERASER
+   يمسح stroke كامل أو highlighter group كامل
+====================================================== */
+
+function eraseAtPoint(
+    event,
+    canvas,
+    pageContainer,
+    pageNumber
+) {
+    const point =
+        getNormalizedPoint(
+            event,
+            canvas
+        );
+
+    const annotations =
+        getPageAnnotations(
+            pageNumber
+        );
+
+    const width =
+        canvas.getBoundingClientRect().width;
+
+    const height =
+        canvas.getBoundingClientRect().height;
+
+    const hitRadius =
         Math.max(
-            1,
+            8 / Math.max(width, height),
+            0.006
+        );
+
+    /*
+       ابحث من آخر رسم إلى أوله
+       حتى تمسح العنصر الأعلى أولاً.
+    */
+
+    for (
+        let i = annotations.strokes.length - 1;
+        i >= 0;
+        i--
+    ) {
+        const stroke =
+            annotations.strokes[i];
+
+        if (
+            stroke.points.some(
+                p =>
+                    distance(
+                        point,
+                        p
+                    ) <= hitRadius
+            )
+        ) {
+            annotations.strokes.splice(i, 1);
+
+            saveAnnotations();
+
+            redrawAnnotations(
+                pageContainer,
+                pageNumber
+            );
+
+            return;
+        }
+
+        /*
+           قياس أقرب نقطة على المسار
+           في حالة السحب فوق الخط.
+        */
+
+        for (
+            let p = 1;
+            p < stroke.points.length;
+            p++
+        ) {
+            if (
+                distanceToSegment(
+                    point,
+                    stroke.points[p - 1],
+                    stroke.points[p]
+                ) <= hitRadius
+            ) {
+                annotations.strokes.splice(
+                    i,
+                    1
+                );
+
+                saveAnnotations();
+
+                redrawAnnotations(
+                    pageContainer,
+                    pageNumber
+                );
+
+                return;
+            }
+        }
+    }
+
+    /*
+       ابحث عن highlighter groups.
+    */
+
+    for (
+        let i = annotations.highlights.length - 1;
+        i >= 0;
+        i--
+    ) {
+        const group =
+            annotations.highlights[i];
+
+        const inside =
+            group.some(rect =>
+                point.x >= rect.x &&
+                point.x <= rect.x + rect.width &&
+                point.y >= rect.y &&
+                point.y <= rect.y + rect.height
+            );
+
+        if (inside) {
+            annotations.highlights.splice(
+                i,
+                1
+            );
+
+            saveAnnotations();
+
+            redrawAnnotations(
+                pageContainer,
+                pageNumber
+            );
+
+            return;
+        }
+    }
+}
+
+function distance(a, b) {
+    return Math.hypot(
+        a.x - b.x,
+        a.y - b.y
+    );
+}
+
+function distanceToSegment(
+    point,
+    a,
+    b
+) {
+    const dx =
+        b.x - a.x;
+
+    const dy =
+        b.y - a.y;
+
+    if (dx === 0 && dy === 0) {
+        return distance(point, a);
+    }
+
+    const t =
+        Math.max(
+            0,
             Math.min(
-                pageNumber,
-                pdfDocument.numPages
+                1,
+                (
+                    (point.x - a.x) * dx +
+                    (point.y - a.y) * dy
+                ) /
+                (dx * dx + dy * dy)
             )
         );
 
-
-    if (
-        target === currentPage &&
-        pdfViewer.children.length > 0
-    ) {
-
-        return;
-
-    }
-
-
-    currentPage =
-        target;
-
-
-    await renderPage(
-        currentPage
+    return distance(
+        point,
+        {
+            x: a.x + t * dx,
+            y: a.y + t * dy
+        }
     );
-
-
-    updateNavigation();
-
 }
 
-/* ======================================================
-   الانتقال المباشر إلى صفحة
-====================================================== */
-
-pageInput.addEventListener(
-    "change",
-    function () {
-
-        if (!pdfDocument) {
-            return;
-        }
-
-        let requestedPage =
-            parseInt(this.value, 10);
-
-        /*
-           التأكد من أن الرقم صحيح
-        */
-
-        if (Number.isNaN(requestedPage)) {
-
-            this.value = currentPage;
-
-            return;
-        }
-
-        /*
-           منع تجاوز عدد الصفحات
-        */
-
-        requestedPage =
-            Math.max(
-                1,
-                Math.min(
-                    requestedPage,
-                    pdfDocument.numPages
-                )
-            );
-
-        /*
-           الانتقال للصفحة
-        */
-
-        goToPage(requestedPage);
-
-    }
-);
 
 /* ======================================================
-   الصفحة السابقة
+   إشعار أول استخدام
 ====================================================== */
 
-previousPageButton.addEventListener(
-    "click",
-    function () {
-
-        goToPage(
-            currentPage - 1
+function maybeShowPronunciationNotice() {
+    const seen =
+        localStorage.getItem(
+            "yazeedPronunciationNoticeSeen"
         );
 
+    if (seen === "true") {
+        return;
     }
-);
 
+    pronunciationModal.hidden = false;
 
-/* ======================================================
-   الصفحة التالية
-====================================================== */
+    setActiveMode("hand");
 
-nextPageButton.addEventListener(
+    setTimeout(() => {
+        understoodButton.focus();
+    }, 50);
+}
+
+understoodButton.addEventListener(
     "click",
     function () {
-
-        goToPage(
-            currentPage + 1
+        localStorage.setItem(
+            "yazeedPronunciationNoticeSeen",
+            "true"
         );
 
+        pronunciationModal.hidden = true;
     }
 );
 
 
 /* ======================================================
-   تحديث أزرار الصفحات
-====================================================== */
-
-function updateNavigation() {
-
-    if (!pdfDocument) {
-
-        previousPageButton.disabled =
-            true;
-
-        nextPageButton.disabled =
-            true;
-
-        return;
-
-    }
-
-
-    previousPageButton.disabled =
-        currentPage <= 1;
-
-
-    nextPageButton.disabled =
-        currentPage >=
-        pdfDocument.numPages;
-
-}
-
-
-/* ======================================================
-   ZOOM
-====================================================== */
-
-async function zoomIn() {
-
-    if (!pdfDocument) {
-
-        return;
-
-    }
-
-
-    scale += 0.1;
-
-
-    if (scale > 3) {
-
-        scale = 3;
-
-    }
-
-
-    await renderPage(
-        currentPage
-    );
-
-}
-
-
-async function zoomOut() {
-
-    if (!pdfDocument) {
-
-        return;
-
-    }
-
-
-    scale -= 0.1;
-
-
-    if (scale < 0.5) {
-
-        scale = 0.5;
-
-    }
-
-
-    await renderPage(
-        currentPage
-    );
-
-}
-
-
-/* ======================================================
-   أزرار التكبير
-====================================================== */
-
-zoomInButton.addEventListener(
-    "click",
-    zoomIn
-);
-
-
-zoomOutButton.addEventListener(
-    "click",
-    zoomOut
-);
-
-
-/* ======================================================
-   اختصارات لوحة المفاتيح
+   KEYBOARD SHORTCUTS
 ====================================================== */
 
 document.addEventListener(
     "keydown",
     function (event) {
-
         const active =
             document.activeElement;
-
-
-        /*
-           لا نستخدم الاختصارات
-           أثناء إدخال الرمز.
-        */
 
         if (
             active &&
@@ -1712,72 +2251,72 @@ document.addEventListener(
                 active.tagName === "SELECT"
             )
         ) {
-
             return;
-
         }
 
-
-        if (
-            event.key === "ArrowLeft"
-        ) {
-
-            goToPage(
-                currentPage + 1
-            );
-
+        if (event.key === "ArrowLeft") {
+            if (pdfDocument) {
+                scrollToPage(
+                    currentPage + 1
+                );
+            }
         }
 
-
-        if (
-            event.key === "ArrowRight"
-        ) {
-
-            goToPage(
-                currentPage - 1
-            );
-
+        if (event.key === "ArrowRight") {
+            if (pdfDocument) {
+                scrollToPage(
+                    currentPage - 1
+                );
+            }
         }
 
-
-        if (
-            event.key === "+" ||
-            event.key === "="
-        ) {
-
-            zoomIn();
-
+        if (event.key === "+" || event.key === "=") {
+            zoomInButton.click();
         }
 
-
-        if (
-            event.key === "-"
-        ) {
-
-            zoomOut();
-
+        if (event.key === "-") {
+            zoomOutButton.click();
         }
-
     }
 );
 
 
 /* ======================================================
-   إيقاف النطق عند إغلاق الصفحة
+   RESIZE
+====================================================== */
+
+let resizeTimer = null;
+
+window.addEventListener(
+    "resize",
+    function () {
+        clearTimeout(resizeTimer);
+
+        resizeTimer =
+            setTimeout(() => {
+                if (
+                    pdfDocument &&
+                    readerApp.hidden === false
+                ) {
+                    buildContinuousViewer(
+                        currentPage
+                    );
+                }
+            }, 250);
+    }
+);
+
+
+/* ======================================================
+   CANCEL SPEECH
 ====================================================== */
 
 window.addEventListener(
     "beforeunload",
     function () {
-
-        if (
-            "speechSynthesis" in window
-        ) {
-
+        if ("speechSynthesis" in window) {
             speechSynthesis.cancel();
-
         }
-
     }
 );
 
@@ -1787,24 +2326,13 @@ window.addEventListener(
 ====================================================== */
 
 loadSpeechSettings();
+setActiveMode("hand");
 
-
-if (
-    "speechSynthesis" in window
-) {
-
+if ("speechSynthesis" in window) {
     loadVoices();
-
 
     speechSynthesis.onvoiceschanged =
         loadVoices;
-
 }
 
-
-/* ======================================================
-   تشغيل الجلسة
-====================================================== */
-
 restoreSession();
-

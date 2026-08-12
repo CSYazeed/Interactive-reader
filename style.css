@@ -53,10 +53,6 @@ body {
     min-height: 100vh;
 }
 
-/* =========================================================
-   COMMON
-========================================================= */
-
 [hidden] {
     display: none !important;
 }
@@ -68,7 +64,7 @@ select {
 }
 
 /* =========================================================
-   AUTH SCREENS
+   AUTH
 ========================================================= */
 
 .auth-screen {
@@ -336,7 +332,7 @@ select {
 }
 
 /* =========================================================
-   TOP BAR
+   TOPBAR
 ========================================================= */
 
 .topbar {
@@ -353,6 +349,8 @@ select {
     justify-content: space-between;
 
     padding: 0 28px;
+
+    flex: 0 0 auto;
 }
 
 .brand {
@@ -417,6 +415,8 @@ select {
     border-bottom: 1px solid var(--border);
 
     padding: 14px 24px;
+
+    flex: 0 0 auto;
 }
 
 .voice-panel-inner {
@@ -559,7 +559,7 @@ select {
 ========================================================= */
 
 .toolbar {
-    height: 58px;
+    min-height: 62px;
 
     background: var(--surface-soft);
 
@@ -571,7 +571,13 @@ select {
 
     justify-content: center;
 
-    gap: 40px;
+    gap: 28px;
+
+    padding: 10px 14px;
+
+    flex-wrap: wrap;
+
+    flex: 0 0 auto;
 }
 
 .toolbar-group {
@@ -582,23 +588,32 @@ select {
     gap: 8px;
 }
 
+.annotation-tools {
+    padding-right: 10px;
+    border-right: 1px solid var(--border);
+}
+
 .tool-button {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
 
     border: 1px solid var(--border-dark);
 
     background: white;
 
-    border-radius: 7px;
+    border-radius: 8px;
 
     cursor: pointer;
 
-    font-size: 18px;
+    font-size: 17px;
 
     color: #334155;
 
-    transition: 0.15s ease;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease,
+        transform 0.15s ease;
 }
 
 .tool-button:hover {
@@ -607,18 +622,37 @@ select {
     border-color: #93c5fd;
 
     color: var(--primary);
+
+    transform: translateY(-1px);
+}
+
+.tool-button.active {
+    background: var(--primary);
+
+    border-color: var(--primary);
+
+    color: white;
+
+    box-shadow:
+        0 3px 10px rgba(6, 125, 185, 0.22);
 }
 
 .tool-button:disabled {
     opacity: 0.4;
 
     cursor: not-allowed;
+
+    transform: none;
 }
 
 .page-info {
-    min-width: 70px;
+    min-width: 105px;
 
-    text-align: center;
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
 
     font-size: 14px;
 
@@ -628,7 +662,7 @@ select {
 }
 
 .page-separator {
-    margin: 0 4px;
+    margin: 0 5px;
 
     color: #a0a8b5;
 }
@@ -645,6 +679,46 @@ select {
     direction: ltr;
 }
 
+.thickness-control {
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    padding-right: 4px;
+
+    white-space: nowrap;
+}
+
+.thickness-control label {
+    color: var(--text-soft);
+
+    font-size: 10px;
+
+    font-weight: 700;
+}
+
+#penThickness {
+    width: 100px;
+
+    accent-color: #dc2626;
+
+    cursor: pointer;
+}
+
+#thicknessValue {
+    min-width: 18px;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    color: #dc2626;
+
+    direction: ltr;
+}
+
 /* =========================================================
    VIEWER
 ========================================================= */
@@ -652,17 +726,17 @@ select {
 .viewer-container {
     flex: 1;
 
-    overflow: auto;
+    min-height: 0;
 
-    padding: 35px;
+    overflow-y: auto;
 
-    display: flex;
+    overflow-x: auto;
 
-    justify-content: center;
-
-    align-items: flex-start;
+    padding: 35px 20px;
 
     background: #e8edf3;
+
+    scroll-behavior: smooth;
 }
 
 .pdf-viewer {
@@ -673,10 +747,16 @@ select {
     align-items: center;
 
     gap: 25px;
+
+    width: max-content;
+
+    min-width: 100%;
 }
 
 .pdf-page {
     position: relative;
+
+    flex: 0 0 auto;
 
     background: white;
 
@@ -686,31 +766,19 @@ select {
     overflow: hidden;
 }
 
-.pdf-page canvas {
+.pdf-canvas {
+    position: absolute;
+
+    inset: 0;
+
     display: block;
+
+    z-index: 1;
 }
 
 /* =========================================================
-   PDF.JS NATIVE TEXT LAYER
+   PDF.JS TEXT LAYER
 ========================================================= */
-
-.pdf-page {
-    position: relative;
-    background: white;
-
-    box-shadow:
-        0 4px 15px rgba(0, 0, 0, 0.12);
-}
-
-
-/*
-   PDF.js هو المسؤول عن:
-   position
-   transform
-   font-size
-   width
-   height
-*/
 
 .textLayer {
     position: absolute;
@@ -730,15 +798,9 @@ select {
     transform-origin: 0 0;
 
     z-index: 2;
+
+    pointer-events: auto;
 }
-
-
-/*
-   لا نحدد position أو transform
-   للـ span هنا.
-
-   PDF.js يقوم بذلك.
-*/
 
 .textLayer span {
     color: transparent;
@@ -754,47 +816,167 @@ select {
     user-select: text;
 
     -webkit-user-select: text;
+
+    border-radius: 2px;
+
+    transition:
+        background-color 0.12s ease,
+        box-shadow 0.12s ease;
 }
 
-
-/*
-   النص الإنجليزي القابل للنقر.
-*/
-
-.textLayer .clickable-word {
+.textLayer .clickable-text {
     color: transparent;
 
     cursor: pointer;
-
-    border-radius: 3px;
-
-    transition:
-        background 0.15s ease,
-        box-shadow 0.15s ease;
 }
 
 /*
-   تأكد أن الـ canvas تحت TextLayer.
+   تمييز مؤقت للنطق.
+   لا يتم حفظه في localStorage.
 */
 
-.pdf-page canvas {
-    position: relative;
+.textLayer .speech-highlight {
+    background: rgba(250, 204, 21, 0.52);
 
-    z-index: 1;
-
-    display: block;
-}
-
-.text-layer .clickable-word {
-    color: transparent;
-
-    cursor: pointer;
+    box-shadow:
+        0 0 0 1px rgba(245, 158, 11, 0.08);
 
     border-radius: 3px;
+}
+
+/* =========================================================
+   ANNOTATION CANVAS
+========================================================= */
+
+.annotation-canvas {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    z-index: 4;
+
+    touch-action: none;
+
+    pointer-events: none;
+}
+
+/*
+   في وضع القلم/الممحاة، الكانفاس
+   يأخذ المؤشر الكامل فوق النص.
+*/
+
+body[data-reader-mode="pen"] .annotation-canvas,
+body[data-reader-mode="eraser"] .annotation-canvas {
+    z-index: 5;
+}
+
+body[data-reader-mode="pen"] .textLayer,
+body[data-reader-mode="eraser"] .textLayer {
+    pointer-events: none;
+}
+
+body[data-reader-mode="hand"] .textLayer,
+body[data-reader-mode="highlighter"] .textLayer {
+    pointer-events: auto;
+}
+
+/*
+   صفحة التحميل.
+*/
+
+.page-loading {
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--text-muted);
+
+    font-size: 12px;
+
+    background: white;
+
+    z-index: 0;
+}
+
+.page-error,
+.pdf-error {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    height: 100%;
+
+    color: var(--danger);
+
+    background: #fff7f7;
+
+    font-size: 12px;
+}
+
+.pdf-error {
+    width: min(500px, 90vw);
+    min-height: 180px;
+
+    border: 1px solid #fecaca;
+
+    border-radius: 12px;
+}
+
+/* =========================================================
+   PAGE INPUT
+========================================================= */
+
+.page-input {
+    width: 56px;
+    height: 36px;
+
+    padding: 0 8px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: white;
+
+    color: var(--text);
+
+    font-family: "Tajawal", sans-serif;
+
+    font-size: 15px;
+
+    text-align: center;
+
+    outline: none;
 
     transition:
-        background 0.15s ease,
-        box-shadow 0.15s ease;
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.page-input:focus {
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(37, 99, 235, 0.12);
+}
+
+.page-input::-webkit-inner-spin-button,
+.page-input::-webkit-outer-spin-button {
+    opacity: 0;
+}
+
+.page-input {
+    appearance: textfield;
+    -moz-appearance: textfield;
 }
 
 /* =========================================================
@@ -802,17 +984,20 @@ select {
 ========================================================= */
 
 .statusbar {
-    min-height: 42px;
+    min-height: 46px;
 
     background: white;
 
     border-top: 1px solid var(--border);
 
-    display: flex;
+    display: grid;
+
+    grid-template-columns:
+        minmax(150px, 1fr)
+        minmax(260px, 1.5fr)
+        minmax(180px, auto);
 
     align-items: center;
-
-    justify-content: space-between;
 
     gap: 20px;
 
@@ -821,6 +1006,8 @@ select {
     font-size: 12px;
 
     color: var(--text-soft);
+
+    flex: 0 0 auto;
 }
 
 .pronunciation-status {
@@ -828,12 +1015,174 @@ select {
 
     font-weight: 600;
 
-    text-align: left;
+    text-align: center;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+.footer-links {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-start;
+
+    gap: 18px;
+}
+
+.footer-links a {
+    color: var(--primary);
+
+    text-decoration: none;
+
+    font-weight: 700;
+
+    transition:
+        color 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.footer-links a:hover {
+    color: var(--primary-dark);
+
+    opacity: 0.85;
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.modal-backdrop {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 9999;
+
+    background:
+        rgba(15, 23, 42, 0.56);
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    backdrop-filter: blur(4px);
+}
+
+.modal-card {
+    width: min(430px, 100%);
+
+    background: white;
+
+    border: 1px solid var(--border);
+
+    border-radius: 20px;
+
+    padding: 34px 28px 28px;
+
+    text-align: center;
+
+    box-shadow:
+        0 25px 70px rgba(15, 23, 42, 0.22);
+
+    animation:
+        modalIn 0.2s ease-out;
+}
+
+.modal-icon {
+    width: 72px;
+    height: 72px;
+
+    margin: 0 auto 16px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    background: var(--primary-light);
+
+    border-radius: 19px;
+
+    font-size: 32px;
+}
+
+.modal-card h2 {
+    font-size: 21px;
+
+    font-weight: 800;
+
+    margin-bottom: 10px;
+}
+
+.modal-card p {
+    color: var(--text-soft);
+
+    font-size: 15px;
+
+    line-height: 1.8;
+
+    margin-bottom: 8px;
+}
+
+.modal-button {
+    margin-top: 18px;
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* =========================================================
    MOBILE
 ========================================================= */
+
+@media (max-width: 900px) {
+
+    .voice-panel-inner {
+        flex-wrap: wrap;
+    }
+
+    .voice-control,
+    .speed-control {
+        min-width: 220px;
+    }
+
+    .toolbar {
+        gap: 16px;
+    }
+
+    .annotation-tools {
+        border-right: 0;
+        padding-right: 0;
+    }
+
+    .statusbar {
+        grid-template-columns: 1fr;
+        gap: 6px;
+
+        text-align: center;
+    }
+
+    .footer-links {
+        justify-content: center;
+    }
+}
 
 @media (max-width: 700px) {
 
@@ -897,107 +1246,46 @@ select {
     }
 
     .toolbar {
-        gap: 20px;
+        justify-content: center;
+
+        gap: 8px;
+
+        padding: 9px 8px;
+    }
+
+    .annotation-tools {
+        width: 100%;
+
+        justify-content: center;
+
+        flex-wrap: wrap;
+    }
+
+    .thickness-control {
+        width: 100%;
+
+        justify-content: center;
+    }
+
+    #penThickness {
+        width: 150px;
     }
 
     .viewer-container {
-        padding: 15px;
+        padding: 15px 10px;
     }
 
     .statusbar {
-        flex-direction: column;
-
-        align-items: stretch;
-
-        padding: 8px 10px;
+        padding: 10px;
 
         font-size: 10px;
     }
 
     .pronunciation-status {
-        text-align: right;
+        text-align: center;
     }
-}
 
-/* =========================================================
-   PAGE NUMBER INPUT
-========================================================= */
-
-.page-input {
-    width: 55px;
-    height: 36px;
-
-    padding: 0 8px;
-
-    border: 1px solid var(--border);
-    border-radius: 8px;
-
-    background: white;
-
-    color: var(--text);
-
-    font-family: "Tajawal", sans-serif;
-    font-size: 15px;
-
-    text-align: center;
-
-    outline: none;
-
-    transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-
-.page-input:focus {
-    border-color: var(--primary);
-
-    box-shadow:
-        0 0 0 3px
-        rgba(37, 99, 235, 0.12);
-}
-
-
-/*
-   إزالة الأسهم في Chrome / Edge
-*/
-
-.page-input::-webkit-inner-spin-button,
-.page-input::-webkit-outer-spin-button {
-    opacity: 0;
-}
-
-
-/*
-   Firefox
-*/
-
-.page-input {
-    appearance: textfield;
-    -moz-appearance: textfield;
-}
-
-/* =========================================================
-   ACCURATE TEXT HIGHLIGHT
-========================================================= */
-
-.pdf-text-highlight {
-    position: absolute;
-
-    pointer-events: none;
-
-    z-index: 3;
-
-    background: rgba(37, 99, 235, 0.25);
-
-    border-radius: 3px;
-
-    box-shadow:
-        0 0 0 1px rgba(37, 99, 235, 0.12);
-
-    transition:
-        left 0.08s ease,
-        top 0.08s ease,
-        width 0.08s ease,
-        height 0.08s ease;
+    .footer-links {
+        justify-content: center;
+    }
 }
